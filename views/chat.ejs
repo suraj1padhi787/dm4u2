@@ -4,33 +4,42 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
   <title>WhatsApp Clone</title>
-  <link rel="stylesheet" href="/css/style.css?v=1.2">
   <style>
     /* Premium Violet Theme */
     body {
       background: linear-gradient(135deg, #1E1B2E, #2C2644);
       color: #E2E8F0;
       font-family: 'Segoe UI', sans-serif;
+      margin: 0;
     }
     .top-bar.chat-top-bar {
       background: linear-gradient(90deg, #6B46C1, #B794F4);
       box-shadow: 0 2px 8px rgba(107, 70, 193, 0.5);
-      padding: 12px;
+      padding: 10px;
       border-radius: 0 0 12px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
     .chat-dp {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       border: 2px solid #B794F4;
     }
     .chat-username {
       font-weight: 600;
       color: #F7FAFC;
+      font-size: 16px;
+      flex-grow: 1;
+      margin-left: 10px;
     }
     .back-btn, .menu-btn {
       color: #F7FAFC;
       font-size: 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
       transition: transform 0.2s;
     }
     .back-btn:hover, .menu-btn:hover {
@@ -89,10 +98,10 @@
     }
     /* Search Bar */
     .search-bar {
-      padding: 10px;
+      padding: 8px;
       background: #2D3748;
       border-radius: 12px;
-      margin: 10px;
+      margin: 8px;
     }
     .search-bar input {
       width: 100%;
@@ -111,8 +120,8 @@
     .chat-item {
       display: flex;
       align-items: center;
-      padding: 12px;
-      margin: 8px;
+      padding: 10px;
+      margin: 6px 8px;
       background: #2D3748;
       border-radius: 12px;
       transition: all 0.2s;
@@ -123,30 +132,32 @@
     }
     .chat-info h3 {
       color: #F7FAFC;
-      font-size: 16px;
+      font-size: 15px;
+      margin: 0;
     }
     .chat-bottom p {
       color: #A0AEC0;
-      font-size: 13px;
+      font-size: 12px;
+      margin: 2px 0 0;
     }
     .time {
       color: #B794F4;
-      font-size: 12px;
+      font-size: 11px;
     }
     /* Floating Action Button */
     .fab {
       position: fixed;
-      bottom: 80px;
-      right: 20px;
-      width: 56px;
-      height: 56px;
+      bottom: 70px;
+      right: 15px;
+      width: 48px;
+      height: 48px;
       background: linear-gradient(45deg, #6B46C1, #B794F4);
       color: #F7FAFC;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      font-size: 20px;
       box-shadow: 0 4px 12px rgba(107, 70, 193, 0.5);
       transition: all 0.2s;
     }
@@ -157,18 +168,24 @@
     /* Bottom Navigation */
     .bottom-nav {
       background: #2C2644;
-      padding: 10px;
+      padding: 8px;
       border-radius: 12px 12px 0 0;
       box-shadow: 0 -2px 8px rgba(107, 70, 193, 0.3);
+      display: flex;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
     }
     .nav-btn {
       flex: 1;
-      padding: 10px;
+      padding: 8px;
       background: #4A5568;
       color: #E2E8F0;
       border: none;
       border-radius: 8px;
-      margin: 0 5px;
+      margin: 0 4px;
+      font-size: 14px;
+      cursor: pointer;
       transition: all 0.2s;
     }
     .nav-btn.active, .nav-btn:hover {
@@ -178,7 +195,8 @@
     }
     /* Tabs */
     .tab-content {
-      margin-bottom: 80px;
+      margin-bottom: 60px;
+      padding: 8px;
     }
     .center-text {
       color: #A0AEC0;
@@ -188,21 +206,22 @@
     /* Responsive Design */
     @media (max-width: 600px) {
       .top-bar.chat-top-bar {
-        padding: 10px;
+        padding: 8px;
       }
       .chat-dp {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
       }
       .sidebar {
         width: 80%;
       }
-      .fab {
-        bottom: 70px;
-        right: 15px;
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
+      .chat-item {
+        padding: 8px;
+        margin: 4px 6px;
+      }
+      .nav-btn {
+        font-size: 12px;
+        padding: 6px;
       }
     }
   </style>
@@ -211,7 +230,7 @@
 
 <!-- Top Bar -->
 <div class="top-bar chat-top-bar">
-  <a href="/chat" class="back-btn">&larr;</a>
+  <a href="/chat" class="back-btn">←</a>
   <img src="<%= user?.dp || '/images/dummy.jpg' %>" class="chat-dp" alt="DP">
   <span class="chat-username"><%= username || 'User' %></span>
   <button class="menu-btn" onclick="toggleSidebar()">⋮</button>
@@ -306,7 +325,13 @@ function openDpUpload() {
   window.location.href = '/upload-dp';
 }
 
-const socket = io();
+let socket;
+try {
+  socket = io({ transports: ['websocket'], upgrade: false });
+} catch (error) {
+  console.error('Socket.IO connection failed:', error);
+}
+
 const sender = "<%= username %>";
 const savedKey = `savedUsers_${sender}`;
 let savedUsers = JSON.parse(localStorage.getItem(savedKey)) || [];
@@ -411,6 +436,9 @@ function showTab(tabName) {
 // Initialize
 try {
   renderSavedUsers();
+  socket.on('connect_error', (error) => {
+    console.error('Socket.IO connection error:', error);
+  });
 } catch (error) {
   console.error('Error initializing:', error);
 }
