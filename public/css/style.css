@@ -222,3 +222,95 @@ body, html {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+/* --- WhatsApp Premium Layout Upgrade --- */
+
+/* Top bar bigger */
+.top-bar, .chat-top-bar {
+  height: 70px;
+  font-size: 20px;
+  padding: 15px 15px;
+}
+.chat-username {
+  font-size: 19px;
+  font-weight: 600;
+}
+
+/* Bottom nav bigger */
+.bottom-nav {
+  height: 65px;
+  font-size: 16px;
+  padding: 12px 0;
+  border-top: 1px solid #ccc;
+}
+.nav-btn {
+  font-size: 15px;
+  font-weight: bold;
+}
+
+/* Message bubble bigger */
+.message {
+  font-size: 16px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  margin-bottom: 12px;
+}
+.message.sent {
+  background: #dcf8c6;
+  border-top-right-radius: 0;
+}
+.message.received {
+  background: #fff;
+  border-top-left-radius: 0;
+}
+
+/* Bubble buttons cleaner */
+.message-options {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.message-options button {
+  font-size: 13px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+.reply-btn { background-color: #34b7f1; }
+.edit-btn { background-color: #28a745; }
+.delete-btn { background-color: #dc3545; }
+
+/* Message input full width + bigger */
+.message-input {
+  height: 60px;
+  padding: 12px;
+}
+.message-input input[type="text"] {
+  font-size: 15px;
+  padding: 12px 18px;
+  border-radius: 30px;
+}
+
+/* Scroll area adjusted */
+.chat-messages {
+  top: 70px;
+  bottom: 120px;
+  padding: 15px 10px;
+}
+
+/* Lock zoom */
+html, body {
+  touch-action: none;
+  user-select: none;
+  overscroll-behavior: none;
+}
+
+/* Prevent double-tap zoom iOS */
+body {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
