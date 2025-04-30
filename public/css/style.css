@@ -11,6 +11,8 @@ body, html {
   overflow: hidden;
   -webkit-user-select: none;
   user-select: none;
+  touch-action: manipulation;
+  overscroll-behavior: none;
 }
 
 /* Top Bar */
@@ -18,22 +20,24 @@ body, html {
   position: fixed;
   top: 0;
   width: 100%;
-  height: 60px;
+  height: 70px;
   background: #075E54;
   color: white;
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  padding: 15px;
   z-index: 1000;
+  font-size: 20px;
 }
 .chat-dp {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   margin-right: 10px;
+  object-fit: cover;
 }
 .chat-username {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
   flex: 1;
 }
@@ -46,7 +50,7 @@ body, html {
 
 /* Search Bar */
 .search-bar {
-  margin-top: 60px;
+  margin-top: 70px;
   padding: 10px;
   background: white;
 }
@@ -62,11 +66,11 @@ body, html {
 /* Chat Area */
 .chat-messages {
   position: absolute;
-  top: 120px;
-  bottom: 60px;
+  top: 70px;
+  bottom: 120px;
   left: 0;
   right: 0;
-  padding: 10px;
+  padding: 15px 10px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -74,28 +78,50 @@ body, html {
 
 /* Message Bubbles */
 .message {
-  max-width: 75%;
-  margin: 8px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 15px;
+  max-width: 80%;
+  margin: 12px 0;
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 17px;
   word-wrap: break-word;
   animation: fadeIn 0.2s ease;
+  line-height: 1.5;
 }
 .message.sent {
   align-self: flex-end;
   background: #DCF8C6;
+  border-radius: 16px 16px 0px 16px;
 }
 .message.received {
   align-self: flex-start;
-  background: white;
+  background: #FFFFFF;
+  border-radius: 16px 16px 16px 0px;
 }
 .time {
-  font-size: 11px;
+  font-size: 12px;
   color: gray;
   text-align: right;
   margin-top: 5px;
 }
+
+/* Bubble buttons */
+.message-options {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.message-options button {
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-weight: 500;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+.reply-btn { background-color: #34b7f1; }
+.edit-btn { background-color: #28a745; }
+.delete-btn { background-color: #dc3545; }
 
 /* Input Bar */
 .message-input {
@@ -104,16 +130,17 @@ body, html {
   left: 0;
   right: 0;
   background: #f0f0f0;
-  padding: 8px 10px;
+  padding: 12px 15px;
   display: flex;
   align-items: center;
+  height: 65px;
 }
 .message-input input[type="text"] {
   flex: 1;
-  padding: 10px;
-  font-size: 15px;
+  padding: 12px 18px;
+  font-size: 16px;
   border: none;
-  border-radius: 20px;
+  border-radius: 25px;
   background: white;
   outline: none;
 }
@@ -129,8 +156,9 @@ body, html {
   background: #075E54;
   color: white;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
 }
 
 /* Bottom Nav */
@@ -138,22 +166,25 @@ body, html {
   position: fixed;
   bottom: 0;
   width: 100%;
-  height: 60px;
+  height: 65px;
   background: white;
   display: flex;
   justify-content: space-around;
   align-items: center;
   border-top: 1px solid #ccc;
+  font-size: 16px;
+  padding: 12px 0;
+  z-index: 999;
 }
 .nav-btn {
   background: none;
   border: none;
   font-size: 15px;
   color: #666;
+  font-weight: bold;
 }
 .nav-btn.active {
   color: #075E54;
-  font-weight: bold;
 }
 
 /* Floating Button */
@@ -176,10 +207,10 @@ body, html {
 /* Sidebar */
 .sidebar {
   position: fixed;
-  top: 60px;
+  top: 70px;
   right: -260px;
   width: 250px;
-  height: calc(100% - 60px);
+  height: calc(100% - 70px);
   background: #fff;
   transition: right 0.3s ease;
   box-shadow: -2px 0 5px rgba(0,0,0,0.2);
@@ -222,159 +253,3 @@ body, html {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
-/* --- WhatsApp Premium Layout Upgrade --- */
-
-/* Top bar bigger */
-.top-bar, .chat-top-bar {
-  height: 70px;
-  font-size: 20px;
-  padding: 15px 15px;
-}
-.chat-username {
-  font-size: 19px;
-  font-weight: 600;
-}
-
-/* Bottom nav bigger */
-.bottom-nav {
-  height: 65px;
-  font-size: 16px;
-  padding: 12px 0;
-  border-top: 1px solid #ccc;
-}
-.nav-btn {
-  font-size: 15px;
-  font-weight: bold;
-}
-
-/* Message bubble bigger */
-.message {
-  font-size: 16px;
-  padding: 12px 16px;
-  border-radius: 18px;
-  margin-bottom: 12px;
-}
-.message.sent {
-  background: #dcf8c6;
-  border-top-right-radius: 0;
-}
-.message.received {
-  background: #fff;
-  border-top-left-radius: 0;
-}
-
-/* Bubble buttons cleaner */
-.message-options {
-  display: flex;
-  gap: 8px;
-  margin-top: 6px;
-}
-.message-options button {
-  font-size: 13px;
-  padding: 5px 8px;
-  border-radius: 6px;
-  border: none;
-  color: white;
-  cursor: pointer;
-}
-.reply-btn { background-color: #34b7f1; }
-.edit-btn { background-color: #28a745; }
-.delete-btn { background-color: #dc3545; }
-
-/* Message input full width + bigger */
-.message-input {
-  height: 60px;
-  padding: 12px;
-}
-.message-input input[type="text"] {
-  font-size: 15px;
-  padding: 12px 18px;
-  border-radius: 30px;
-}
-
-/* Scroll area adjusted */
-.chat-messages {
-  top: 70px;
-  bottom: 120px;
-  padding: 15px 10px;
-}
-
-/* Lock zoom */
-html, body {
-  touch-action: none;
-  user-select: none;
-  overscroll-behavior: none;
-}
-
-/* Prevent double-tap zoom iOS */
-body {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -webkit-text-size-adjust: 100%;
-  touch-action: manipulation;
-}
-/* ✅ BIGGER Chat Bubble + Premium Spacing */
-.message {
-  max-width: 80%;
-  font-size: 17px;
-  line-height: 1.5;
-  padding: 14px 18px;
-  margin: 12px 0;
-  border-radius: 18px;
-  word-wrap: break-word;
-}
-
-.message.sent {
-  background: #dcf8c6;
-  align-self: flex-end;
-  border-radius: 16px 16px 0px 16px;
-}
-
-.message.received {
-  background: #ffffff;
-  align-self: flex-start;
-  border-radius: 16px 16px 16px 0px;
-}
-
-/* ✅ BIGGER Buttons inside Bubble */
-.message-options button {
-  font-size: 14px;
-  padding: 6px 10px;
-  border-radius: 7px;
-  font-weight: 500;
-}
-
-/* ✅ Time below message cleaner */
-.message .time {
-  font-size: 12px;
-  margin-top: 6px;
-  color: #777;
-}
-
-/* ✅ Top Bar and Username Bigger */
-.chat-top-bar {
-  height: 70px;
-  padding: 15px;
-}
-.chat-username {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-/* ✅ Input Area Bigger */
-.message-input {
-  height: 65px;
-  padding: 12px 15px;
-}
-.message-input input[type="text"] {
-  font-size: 16px;
-  padding: 12px 18px;
-  border-radius: 25px;
-}
-.send-btn {
-  width: 44px;
-  height: 44px;
-  font-size: 20px;
-  border-radius: 50%;
-}
-
