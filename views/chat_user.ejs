@@ -10,7 +10,661 @@
       margin-top: 5px;
       display: flex;
       gap: 6px;
+    }<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat with <%= receiver %></title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#6B46C1">
+  <style>
+    /* Premium Violet Theme */
+    body {
+      background: linear-gradient(135deg, #1E1B2E, #2C2644);
+      color: #E2E8F0;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
     }
+    .top-bar.chat-top-bar {
+      background: linear-gradient(90deg, #6B46C1, #B794F4);
+      box-shadow: 0 2px 8px rgba(107, 70, 193, 0.5);
+      padding: 10px;
+      border-radius: 0 0 12px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chat-dp {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid #B794F4;
+    }
+    .back-btn {
+      color: #F7FAFC;
+      font-size: 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .back-btn:hover {
+      transform: scale(1.1);
+      text-shadow: 0 0 8px #B794F4;
+    }
+    .call-btn {
+      background: none;
+      border: none;
+      color: #F7FAFC;
+      font-size: 20px;
+      cursor: pointer;
+      margin: 0 10px;
+      transition: transform 0.2s;
+    }
+    .call-btn:hover {
+      transform: scale(1.1);
+      text-shadow: 0 0 8px #B794F4;
+    }
+    .chat-messages {
+      padding: 10px;
+      height: calc(100vh - 180px);
+      overflow-y: auto;
+      background: #2D3748;
+      margin: 8px;
+      border-radius: 12px;
+    }
+    .message {
+      margin: 8px;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 70%;
+    }
+    .message.sent {
+      background: #6B46C1;
+      color: #F7FAFC;
+      margin-left: auto;
+    }
+    .message.received {
+      background: #4A5568;
+      color: #E2E8F0;
+    }
+    .time {
+      font-size: 11px;
+      color: #B794F4;
+    }
+    .message-options {
+      margin-top: 5px;
+      display: flex;
+      gap: 6px;
+    }
+    .message-options button {
+      border: none;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #F7FAFC;
+      transition: all 0.2s;
+    }
+    .reply-btn { background: #007BFF; }
+    .edit-btn { background: #28A745; }
+    .delete-btn { background: #DC3545; }
+    .message-options button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(107, 70, 193, 0.4);
+    }
+    .reply-preview {
+      background: #4A5568;
+      padding: 4px 8px;
+      border-left: 4px solid #B794F4;
+      font-size: 13px;
+      margin-bottom: 5px;
+      border-radius: 5px;
+    }
+    #editPreview {
+      background: #FFF3CD;
+      color: #856404;
+      padding: 5px 10px;
+      border-left: 4px solid #FFC107;
+      margin: 5px;
+      font-size: 13px;
+      display: none;
+    }
+    .message-input {
+      display: flex;
+      padding: 8px;
+      background: #2D3748;
+      border-radius: 12px;
+      margin: 8px;
+    }
+    .message-input input {
+      flex-grow: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #4A5568;
+      color: #E2E8F0;
+    }
+    .emoji-btn, .send-btn {
+      background: #6B46C1;
+      color: #F7FAFC;
+      border: none;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 0 5px;
+    }
+    .send-btn:disabled {
+      background: #4A5568;
+      cursor: not-allowed;
+    }
+    .input-icons label, .input-icons button {
+      cursor: pointer;
+      color: #B794F4;
+      font-size: 18px;
+      margin: 0 5px;
+    }
+    /* Call Modal */
+    #callModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(30, 27, 46, 0.95);
+      z-index: 2000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #F7FAFC;
+    }
+    #callModal.active {
+      display: flex;
+    }
+    #callStatus {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    #remoteVideo, #localVideo {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+      border: 2px solid #B794F4;
+      margin: 10px;
+    }
+    #localVideo {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 120px;
+      height: 160px;
+    }
+    #hangUpBtn {
+      background: #DC2626;
+      color: #F7FAFC;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #hangUpBtn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(107, 70, 193, 0.6);
+    }
+    /* Responsive Design */
+    @media (max-width: 600px) {
+      .top-bar.chat-top-bar {
+        padding: 8px;
+      }
+      .chat-dp {
+        width: 32px;
+        height: 32px;
+      }
+      .call-btn {
+        font-size: 18px;
+        margin: 0 5px;
+      }
+      .message {
+        max-width: 85%;
+      }
+      #remoteVideo, #localVideo {
+        max-width: 100%;
+      }
+      #localVideo {
+        width: 80px;
+        height: 100px;
+        bottom: 10px;
+        right: 10px;
+      }
+    }
+  </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log('✅ Service Worker registered'))
+      .catch(err => console.log('❌ Service Worker failed', err));
+    }
+  </script>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar chat-top-bar">
+  <a href="/chat" class="back-btn">&larr;</a>
+  <img src="<%= receiverDp || '/images/dummy.jpg' %>" class="chat-dp" alt="DP">
+  <div style="display:flex;flex-direction:column;">
+    <span class="chat-username"><%= receiver %></span>
+    <span id="statusText" style="font-size:12px;color:#F7FAFC;">Last seen recently</span>
+  </div>
+  <button class="call-btn" onclick="startCall('voice')">📞</button>
+  <button class="call-btn" onclick="startCall('video')">📹</button>
+</div>
+
+<!-- Chat Messages -->
+<div class="chat-messages" id="messages"></div>
+
+<!-- Typing Indicator -->
+<div id="typingIndicator" style="text-align:center;color:#A0AEC0;margin:5px 0;"></div>
+
+<!-- Edit Mode Preview -->
+<div id="editPreview">Editing message...</div>
+
+<!-- Reply Mode Preview -->
+<div id="replyPreview" style="display:none;" class="reply-preview"></div>
+
+<!-- Message Input Area -->
+<div class="message-input">
+  <button class="emoji-btn">😊</button>
+  <input type="text" id="messageInput" placeholder="Type a message...">
+  <div class="input-icons">
+    <input type="file" id="imageInput" accept="image/*" style="display:none;">
+    <label for="imageInput">📷</label>
+    <button id="sendButton" class="send-btn" disabled>➤</button>
+  </div>
+</div>
+
+<div id="imagePreviewText" style="text-align:center;color:#34C759;margin:5px 0;font-size:13px;"></div>
+
+<!-- Call Modal -->
+<div id="callModal">
+  <div id="callStatus">Connecting...</div>
+  <video id="remoteVideo" autoplay playsinline style="display:none;"></video>
+  <video id="localVideo" autoplay playsinline muted style="display:none;"></video>
+  <button id="hangUpBtn" onclick="hangUp()">Hang Up</button>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
+<script>
+const socket = io({ transports: ['websocket'], upgrade: false });
+const sender = "<%= sender %>";
+const receiver = "<%= receiver %>";
+
+const messagesDiv = document.getElementById('messages');
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
+const imageInput = document.getElementById('imageInput');
+const imagePreviewText = document.getElementById('imagePreviewText');
+const statusText = document.getElementById('statusText');
+const replyPreview = document.getElementById('replyPreview');
+const editPreview = document.getElementById('editPreview');
+const callModal = document.getElementById('callModal');
+const callStatus = document.getElementById('callStatus');
+const remoteVideo = document.getElementById('remoteVideo');
+const localVideo = document.getElementById('localVideo');
+
+let selectedImageData = null;
+let replyToContent = null;
+let editingMessageId = null;
+let peer = null;
+let localStream = null;
+
+// --- Register and Join ---
+socket.emit('register', { username: sender });
+socket.emit('joinChat', { sender, receiver });
+socket.emit('seen', { sender, receiver });
+
+// --- Load Old Messages ---
+socket.on('loadOldMessages', (messages) => {
+  messages.forEach(msg => {
+    const type = msg.sender === sender ? 'sent' : 'received';
+    addMessageBubble(msg._id, msg.content, type, msg.type, msg.time, msg.seen, msg.replyTo);
+  });
+});
+
+// --- Typing Detect ---
+messageInput.addEventListener('input', () => {
+  if (messageInput.value.trim() !== '' || selectedImageData) {
+    sendButton.disabled = false;
+    socket.emit('typing', sender);
+  } else {
+    sendButton.disabled = true;
+  }
+});
+
+// --- Image Select ---
+imageInput.addEventListener('change', function() {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      selectedImageData = e.target.result;
+      imagePreviewText.innerText = "📷 Image selected ✅";
+      sendButton.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// --- Send or Edit Message ---
+sendButton.addEventListener('click', () => {
+  if (editingMessageId) {
+    const newText = messageInput.value.trim();
+    if (newText) {
+      socket.emit('editMessage', { messageId: editingMessageId, newContent: newText });
+    }
+    editingMessageId = null;
+    editPreview.style.display = 'none';
+    messageInput.value = '';
+  } else if (selectedImageData) {
+    socket.emit('sendImage', { sender, receiver, imageData: selectedImageData, replyTo: replyToContent });
+    addMessageBubble(null, selectedImageData, 'sent', 'image', getCurrentTime(), false, replyToContent);
+    selectedImageData = null;
+    imagePreviewText.innerText = '';
+  } else {
+    const message = messageInput.value.trim();
+    if (message) {
+      socket.emit('chatMessage', { sender, receiver, message, replyTo: replyToContent });
+      addMessageBubble(null, message, 'sent', 'text', getCurrentTime(), false, replyToContent);
+      messageInput.value = '';
+    }
+  }
+  clearReply();
+  sendButton.disabled = true;
+});
+
+// --- Bubble ID Assign on Send ---
+socket.on('messageSent', ({ _id }) => {
+  const bubbles = document.querySelectorAll('.message.sent');
+  const lastBubble = bubbles[bubbles.length - 1];
+  if (lastBubble) lastBubble.setAttribute('data-id', _id);
+});
+
+// --- Real-time New Message ---
+socket.on('newMessage', (data) => {
+  if (data.sender === receiver && data.receiver === sender) {
+    addMessageBubble(data._id, data.message, 'received', data.type, data.time, true, data.replyTo);
+    socket.emit('seen', { sender, receiver });
+  }
+});
+
+// --- Real-time Seen Update (Double Tick) ---
+socket.on('seenUpdate', ({ sender: seenSender, receiver: seenReceiver }) => {
+  if (sender === seenReceiver && receiver === seenSender) {
+    const allSent = document.querySelectorAll('.message.sent .time');
+    if (allSent.length > 0) {
+      const lastTime = allSent[allSent.length - 1];
+      if (lastTime.innerHTML.includes('✔') && !lastTime.innerHTML.includes('✔✔')) {
+        lastTime.innerHTML = lastTime.innerHTML.replace('✔', '✔✔');
+      }
+    }
+  }
+});
+
+// --- Real-time Edit Message ---
+socket.on('messageEdited', ({ messageId, newContent }) => {
+  const bubble = document.querySelector(`.message[data-id="${messageId}"]`);
+  if (bubble) {
+    bubble.querySelector('div').innerText = newContent + " (edited)";
+  }
+});
+
+// --- Real-time Delete Message ---
+socket.on('messageDeleted', ({ messageId }) => {
+  const bubble = document.querySelector(`.message[data-id="${messageId}"]`);
+  if (bubble) bubble.remove();
+});
+
+// --- Add Message Bubble Function ---
+function addMessageBubble(id, content, typeBubble, messageType = 'text', time = getCurrentTime(), seen = false, replyTo = null) {
+  const bubble = document.createElement('div');
+  bubble.classList.add('message', typeBubble);
+  if (id) bubble.setAttribute('data-id', id);
+
+  let ticks = typeBubble === 'sent' ? (seen ? '✔✔' : '✔') : '';
+  let replyHtml = replyTo ? `<div class="reply-preview">${replyTo}</div>` : '';
+
+  let optionsHtml = `<div class="message-options"><button class="reply-btn" onclick="startReply('${content}')">Reply</button>`;
+  if (typeBubble === 'sent') {
+    optionsHtml += `<button class="edit-btn" onclick="startEdit(this)">Edit</button><button class="delete-btn" onclick="deleteMessage(this)">Delete</button>`;
+  }
+  optionsHtml += `</div>`;
+
+  if (messageType === 'text') {
+    bubble.innerHTML = `${replyHtml}<div>${content}</div><div class="time">${time} ${ticks}</div>${optionsHtml}`;
+  } else {
+    bubble.innerHTML = `${replyHtml}<img src="${content}" style="max-width:160px; border-radius:10px;"><div class="time">${time} ${ticks}</div>${optionsHtml}`;
+  }
+
+  messagesDiv.appendChild(bubble);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// --- Start Reply ---
+function startReply(content) {
+  replyToContent = content;
+  replyPreview.style.display = 'block';
+  replyPreview.innerText = `Replying to: "${content}"`;
+}
+
+// --- Start Edit ---
+function startEdit(btn) {
+  const bubble = btn.closest('.message');
+  const text = bubble.querySelector('div').innerText.replace(' (edited)', '');
+  editingMessageId = bubble.getAttribute('data-id');
+  messageInput.value = text;
+  editPreview.style.display = 'block';
+}
+
+// --- Delete Message ---
+function deleteMessage(btn) {
+  const bubble = btn.closest('.message');
+  const messageId = bubble.getAttribute('data-id');
+  if (messageId) {
+    socket.emit('deleteMessage', { messageId });
+  }
+  bubble.remove();
+}
+
+// --- Helpers ---
+function clearReply() {
+  replyToContent = null;
+  replyPreview.style.display = 'none';
+}
+
+function getCurrentTime() {
+  const now = new Date();
+  return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// --- Online / Typing System ---
+socket.on('userOnline', (username) => {
+  if (username === receiver) statusText.innerText = 'Online';
+});
+
+socket.on('userOffline', ({ username, lastSeen }) => {
+  if (username === receiver) statusText.innerText = `Last seen at ${lastSeen}`;
+});
+
+socket.on('typing', (username) => {
+  if (username === receiver) {
+    statusText.innerText = 'Typing...';
+    setTimeout(() => socket.emit('checkOnline', receiver), 2000);
+  }
+});
+
+socket.emit('checkOnlineStatus', receiver);
+
+socket.on('userIsOnline', (username) => {
+  if (username === receiver) statusText.innerText = 'Online';
+});
+
+socket.on('userIsOffline', (username) => {
+  if (username === receiver) statusText.innerText = 'Last seen recently';
+});
+
+setInterval(() => socket.emit('checkOnline', receiver), 5000);
+
+// --- WebRTC Call System ---
+async function startCall(type) {
+  try {
+    callModal.classList.add('active');
+    callStatus.innerText = 'Requesting permissions...';
+
+    const constraints = type === 'voice' ? { audio: true, video: false } : { audio: true, video: { width: 640, height: 480 } };
+    localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    
+    if (type === 'video') {
+      localVideo.srcObject = localStream;
+      localVideo.style.display = 'block';
+      remoteVideo.style.display = 'block';
+    }
+
+    callStatus.innerText = 'Calling...';
+    socket.emit('call', { sender, receiver, type });
+
+    peer = new SimplePeer({
+      initiator: true,
+      trickle: false,
+      stream: localStream,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      }
+    });
+
+    peer.on('signal', data => {
+      socket.emit('signal', { sender, receiver, data });
+    });
+
+    peer.on('stream', stream => {
+      remote时代Video.srcObject = stream;
+      callStatus.innerText = 'Connected';
+    });
+
+    peer.on('error', err => {
+      console.error('Peer error:', err);
+      endCall();
+      alert('Call failed. Please try again.');
+    });
+
+  } catch (error) {
+    console.error('Error starting call:', error);
+    endCall();
+    alert('Failed to access microphone/camera. Please check permissions.');
+  }
+}
+
+socket.on('call', async ({ sender: caller, type }) => {
+  try {
+    if (caller === receiver) {
+      callModal.classList.add('active');
+      callStatus.innerText = 'Incoming call...';
+      
+      const constraints = type === 'voice' ? { audio: true, video: false } : { audio: true, video: { width: 640, height: 480 } };
+      localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      if (type === 'video') {
+        localVideo.srcObject = localStream;
+        localVideo.style.display = 'block';
+        remoteVideo.style.display = 'block';
+      }
+
+      peer = new SimplePeer({
+        initiator: false,
+        trickle: false,
+        stream: localStream,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
+        }
+      });
+
+      peer.on('signal', data => {
+        socket.emit('signal', { sender, receiver: caller, data });
+      });
+
+      peer.on('stream', stream => {
+        remoteVideo.srcObject = stream;
+        callStatus.innerText = 'Connected';
+      });
+
+      peer.on('error', err => {
+        console.error('Peer error:', err);
+        endCall();
+        alert('Call failed. Please try again.');
+      });
+
+      socket.emit('acceptCall', { sender, receiver: caller });
+    }
+  } catch (error) {
+    console.error('Error accepting call:', error);
+    endCall();
+    alert('Failed to access microphone/camera. Please check permissions.');
+  }
+});
+
+socket.on('acceptCall', ({ sender: accepter }) => {
+  if (accepter === receiver) {
+    callStatus.innerText = 'Connecting...';
+  }
+});
+
+socket.on('signal', ({ sender: signalSender, data }) => {
+  if (signalSender === receiver && peer) {
+    peer.signal(data);
+  }
+});
+
+socket.on('endCall', ({ sender: ender }) => {
+  if (ender === receiver) {
+    endCall();
+  }
+});
+
+function hangUp() {
+  socket.emit('endCall', { sender, receiver });
+  endCall();
+}
+
+function endCall() {
+  if (peer) {
+    peer.destroy();
+    peer = null;
+  }
+  if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+    localStream = null;
+  }
+  callModal.classList.remove('active');
+  callStatus.innerText = 'Connecting...';
+  localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
+  localVideo.style.display = 'none';
+  remoteVideo.style.display = 'none';
+}
+</script>
+
+</body>
+</html>
     .message-options button {
       border: none;
       padding: 4px 8px;
