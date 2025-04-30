@@ -3,7 +3,7 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const db = new Database(path.join(__dirname, 'chat.db'));
 
-// Init table
+// Init messages table
 db.prepare(`
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,6 +14,16 @@ db.prepare(`
     time TEXT,
     seen INTEGER,
     replyTo TEXT
+  )
+`).run();
+
+// Init stickers table
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS stickers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url TEXT,
+    uploader TEXT,
+    created_at TEXT
   )
 `).run();
 
@@ -52,10 +62,32 @@ function updateMessageById(id, newContent) {
   db.prepare(`UPDATE messages SET content = ? WHERE id = ?`).run(newContent + " (edited)", id);
 }
 
+function insertSticker(url, uploader) {
+  const created_at = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const stmt = db.prepare(`
+    INSERT INTO stickers (url, uploader, created_at)
+    VALUES (?, ?, ?)
+  `);
+  const result = stmt.run(url, uploader, created_at);
+  return result.lastInsertRowid;
+}
+
+function fetchAllStickers() {
+  const stmt = db.prepare(`SELECT * FROM stickers ORDER BY id DESC`);
+  return stmt.all();
+}
+
+function deleteStickerById(id) {
+  db.prepare(`DELETE FROM stickers WHERE id = ?`).run(id);
+}
+
 module.exports = {
   insertMessage,
   fetchConversation,
   markMessagesAsSeen,
   deleteMessageById,
-  updateMessageById
+  updateMessageById,
+  insertSticker,
+  fetchAllStickers,
+  deleteStickerById
 };
