@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta charset="UTF-8">
   <title>WhatsApp Clone</title>
   <link rel="stylesheet" href="/css/style.css?v=1.0">
 </head>
@@ -19,7 +18,6 @@
   <button class="menu-btn" onclick="toggleSidebar()">⋮</button>
 </div>
 
-<!-- Sidebar (hidden by default) -->
 <!-- Sidebar -->
 <div id="sidebar" class="sidebar hidden">
   <div class="sidebar-header">
@@ -31,9 +29,6 @@
     <button onclick="closeSidebar()">Close</button>
   </div>
 </div>
-
-
-
 
 <!-- Search Bar -->
 <div class="search-bar">
@@ -81,27 +76,36 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 
+// ✅ Sidebar Show/Hide Fix
 function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('active');
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar.classList.contains('active')) {
+    sidebar.classList.remove('active');
+    sidebar.classList.add('hidden');
+  } else {
+    sidebar.classList.add('active');
+    sidebar.classList.remove('hidden');
+  }
 }
 
 function closeSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.remove('active');
+  const sidebar = document.getElementById('sidebar');
+  sidebar.classList.remove('active');
+  sidebar.classList.add('hidden');
 }
 
 function openDpUpload() {
-    closeSidebar(); // sidebar close hote hi
-    window.location.href = '/upload-dp'; // Upload page par jaega
+  closeSidebar();
+  window.location.href = '/upload-dp';
 }
 
+// ✅ LocalStorage system for chat list
 const socket = io();
 const sender = "<%= username %>";
 const savedKey = `savedUsers_${sender}`;
 let savedUsers = JSON.parse(localStorage.getItem(savedKey)) || [];
 
-// Render Saved Users (dp ke saath)
+// Render Saved Users
 function renderSavedUsers() {
   const savedDiv = document.getElementById('savedUsersList');
   savedDiv.innerHTML = '';
@@ -132,8 +136,6 @@ function renderSavedUsers() {
   });
 }
 
-
-
 // Delete User
 function deleteUser(index) {
   savedUsers.splice(index, 1);
@@ -141,9 +143,9 @@ function deleteUser(index) {
   renderSavedUsers();
 }
 
-// Search and Save User with DP
+// Search & Save User
 document.getElementById('searchInput').addEventListener('keypress', async function(e) {
-  if (e.key === 'Enter') { // Enter dabane pe chalega
+  if (e.key === 'Enter') {
     const query = this.value.trim();
     if (!query) return;
 
@@ -152,7 +154,15 @@ document.getElementById('searchInput').addEventListener('keypress', async functi
 
     if (data.length > 0) {
       const user = data[0];
-      window.location.href = `/chat/${user.username}`; // ✅ direct chat open
+      const alreadySaved = savedUsers.some(u => u.username === user.username);
+      if (!alreadySaved) {
+        savedUsers.push({
+          username: user.username,
+          dp: user.dp || '/images/dummy.jpg'
+        });
+        localStorage.setItem(savedKey, JSON.stringify(savedUsers));
+      }
+      window.location.href = `/chat/${user.username}`;
     } else {
       alert("User not found");
     }
@@ -161,25 +171,12 @@ document.getElementById('searchInput').addEventListener('keypress', async functi
   }
 });
 
-
-// Tab Switcher
+// Tabs
 function showTab(tabName) {
   document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
   document.getElementById(tabName).style.display = 'block';
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelector(`.nav-btn[onclick="showTab('${tabName}')"]`).classList.add('active');
-}
-
-// Sidebar Controls
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  sidebar.style.display = sidebar.style.display === 'block' ? 'none' : 'block';
-}
-function openDpUpload() {
-  window.location.href = '/upload-dp';
-}
-function closeSidebar() {
-  document.getElementById('sidebar').style.display = 'none';
 }
 
 // Initial Render
