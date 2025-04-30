@@ -1,0 +1,98 @@
+<!-- views/uploadDp.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Change Profile Photo</title>
+  <link rel="stylesheet" href="/css/style.css?v=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e5ddd5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .top-bar {
+      width: 100%;
+      background: #075e54;
+      color: white;
+      padding: 10px 0;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .preview {
+      margin-top: 30px;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: #ccc;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    #uploadForm {
+      margin-top: 20px;
+    }
+    #uploadButton {
+      margin-top: 15px;
+      padding: 10px 25px;
+      background: #25d366;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      color: white;
+      cursor: pointer;
+    }
+    #uploadButton:disabled {
+      background: grey;
+    }
+    #loadingText {
+      margin-top: 10px;
+      display: none;
+      color: green;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">Upload Profile Picture</div>
+
+<div class="preview" id="previewBox"></div>
+
+<form id="uploadForm" action="/uploadDp" method="POST" enctype="multipart/form-data">
+  <input type="file" id="dpInput" name="dp" accept="image/*" required style="margin-top: 20px;">
+  <br>
+  <button id="uploadButton" type="submit" disabled>Upload</button>
+  <div id="loadingText">Uploading...</div>
+</form>
+
+<script>
+const dpInput = document.getElementById('dpInput');
+const previewBox = document.getElementById('previewBox');
+const uploadButton = document.getElementById('uploadButton');
+const loadingText = document.getElementById('loadingText');
+
+dpInput.addEventListener('change', function() {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      previewBox.style.backgroundImage = `url('${e.target.result}')`;
+      uploadButton.disabled = false;
+    }
+    reader.readAsDataURL(file);
+  }
+});
+
+// Auto submit with loading
+uploadButton.addEventListener('click', function() {
+  loadingText.style.display = 'block';
+});
+</script>
+
+</body>
+</html>

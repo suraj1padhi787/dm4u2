@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WhatsApp Clone</title>
+  <link rel="stylesheet" href="/css/style.css?v=1.0">
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar chat-top-bar">
+  <a href="/chat" class="back-btn">&larr;</a>
+  <img src="<%= user.dp || '/images/dummy.jpg' %>" class="chat-dp" alt="DP">
+  <span class="chat-username"><%= username %></span>
+
+  <!-- 3 Dot Menu Button -->
+  <button class="menu-btn" onclick="toggleSidebar()">⋮</button>
+</div>
+
+<!-- Sidebar (hidden by default) -->
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar hidden">
+  <div class="sidebar-header">
+    <img src="<%= user.dp || '/images/dummy.jpg' %>" alt="DP" class="sidebar-dp">
+    <h2><%= username %></h2>
+  </div>
+  <div class="sidebar-content">
+    <button onclick="openDpUpload()">Change DP</button>
+    <button onclick="closeSidebar()">Close</button>
+  </div>
+</div>
+
+
+
+
+<!-- Search Bar -->
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Search username...">
+</div>
+
+<!-- Chats List -->
+<div id="savedUsersList" class="tab-content"></div>
+
+<!-- Status Tab -->
+<div id="status" class="tab-content" style="display:none;">
+  <div class="center-text">No status available</div>
+</div>
+
+<!-- Calls Tab -->
+<div id="calls" class="tab-content" style="display:none;">
+  <div class="call-item">
+    <img src="/images/dummy.jpg" alt="DP">
+    <div class="call-info">
+      <h3>Suraj</h3>
+      <p>Today, 2:45 PM</p>
+    </div>
+    <div class="call-icons">📞</div>
+  </div>
+  <div class="call-item">
+    <img src="/images/dummy.jpg" alt="DP">
+    <div class="call-info">
+      <h3>Jyoti</h3>
+      <p>Yesterday, 5:00 PM</p>
+    </div>
+    <div class="call-icons">📹</div>
+  </div>
+</div>
+
+<!-- Floating Button -->
+<div class="fab">+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="showTab('savedUsersList')">Chats</button>
+  <button class="nav-btn" onclick="showTab('status')">Status</button>
+  <button class="nav-btn" onclick="showTab('calls')">Calls</button>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('active');
+}
+
+function closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.remove('active');
+}
+
+function openDpUpload() {
+    closeSidebar(); // sidebar close hote hi
+    window.location.href = '/upload-dp'; // Upload page par jaega
+}
+
+const socket = io();
+const sender = "<%= username %>";
+const savedKey = `savedUsers_${sender}`;
+let savedUsers = JSON.parse(localStorage.getItem(savedKey)) || [];
+
+// Render Saved Users (dp ke saath)
+function renderSavedUsers() {
+  const savedDiv = document.getElementById('savedUsersList');
+  savedDiv.innerHTML = '';
+
+  if (savedUsers.length === 0) {
+    savedDiv.innerHTML = '<p style="text-align:center;color:gray;">No chats yet</p>';
+    return;
+  }
+
+  savedUsers.forEach((user, index) => {
+    savedDiv.innerHTML += `
+      <div class="chat-item">
+        <a href="/chat/${user.username}">
+          <img src="${user.dp || '/images/dummy.jpg'}" alt="DP" class="chat-dp">
+          <div class="chat-info">
+            <div class="chat-top">
+              <h3>${user.username}</h3>
+              <span class="time">Just now</span>
+            </div>
+            <div class="chat-bottom">
+              <p>Start a chat with ${user.username}</p>
+            </div>
+          </div>
+        </a>
+        <button onclick="deleteUser(${index})" style="background:red;color:white;border:none;padding:5px 10px;margin-left:10px;">🗑️</button>
+      </div>
+    `;
+  });
+}
+
+
+
+// Delete User
+function deleteUser(index) {
+  savedUsers.splice(index, 1);
+  localStorage.setItem(savedKey, JSON.stringify(savedUsers));
+  renderSavedUsers();
+}
+
+// Search and Save User with DP
+document.getElementById('searchInput').addEventListener('keypress', async function(e) {
+  if (e.key === 'Enter') { // Enter dabane pe chalega
+    const query = this.value.trim();
+    if (!query) return;
+
+    const res = await fetch(`/searchUser?username=${query}`);
+    const data = await res.json();
+
+    if (data.length > 0) {
+      const user = data[0];
+      window.location.href = `/chat/${user.username}`; // ✅ direct chat open
+    } else {
+      alert("User not found");
+    }
+
+    this.value = '';
+  }
+});
+
+
+// Tab Switcher
+function showTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+  document.getElementById(tabName).style.display = 'block';
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`.nav-btn[onclick="showTab('${tabName}')"]`).classList.add('active');
+}
+
+// Sidebar Controls
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  sidebar.style.display = sidebar.style.display === 'block' ? 'none' : 'block';
+}
+function openDpUpload() {
+  window.location.href = '/upload-dp';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').style.display = 'none';
+}
+
+// Initial Render
+renderSavedUsers();
+</script>
+
+</body>
+</html>

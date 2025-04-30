@@ -1,0 +1,17 @@
+{
+    "name": "ChatApp",
+    "short_name": "ChatApp",
+    "start_url": "/chat",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#34b7f1",
+    "description": "A private real-time chat app",
+    "icons": [
+      {
+        "src": "/uploads/chatapp-icon.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
+  
