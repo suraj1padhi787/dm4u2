@@ -1069,4 +1069,41 @@ body {
     height: 35px;
     font-size: 18px;
   }
+}@media (max-width: 600px) {
+  .message {
+    max-width: 80%; /* Thoda chhota bubble */
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+
+  .chat-username {
+    font-size: 16px;
+  }
+
+  .time {
+    font-size: 10px;
+  }
+}
+@media (max-width: 600px) {
+  .message-input {
+    height: 50px;
+    padding: 6px 10px;
+  }
+
+  .message-input input[type="text"] {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .emoji-btn, .send-btn {
+    font-size: 20px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .reply-preview {
+    font-size: 13px;
+    padding: 5px 10px;
+    bottom: 50px; /* match input bar */
+  }
 }
