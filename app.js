@@ -1,5 +1,3 @@
-require('dotenv').config(); // first line
-
 const express = require('express');
 const session = require('express-session');
 const fileUpload = require('express-fileupload');
@@ -11,30 +9,27 @@ const socketio = require('socket.io');
 const db = require('./db');
 const setupOnlineTracking = require('./online');
 
-
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 setupOnlineTracking(io);
 
-// Middleware
+// Static and Middlewares
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(session({
-    secret: 'whatsappclone',
-    resave: false,
-    saveUninitialized: true
-}));
+app.use(session({ secret: 'whatsappclone', resave: false, saveUninitialized: true }));
 app.use(fileUpload());
 app.set('view engine', 'ejs');
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// User DB
+// User database
 const USERS_FILE = path.join(__dirname, 'users.json');
+
 function loadUsers() {
     if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
     return JSON.parse(fs.readFileSync(USERS_FILE));
 }
+
 function saveUser(user) {
     const users = loadUsers();
     users.push(user);
@@ -63,7 +58,7 @@ app.post('/login', (req, res) => {
 });
 app.get('/chat', (req, res) => {
     if (!req.session.user) return res.redirect('/login');
-    res.render('chat', {
+    res.render('chat', { 
         username: req.session.user.username,
         user: req.session.user
     });
@@ -74,7 +69,7 @@ app.get('/chat/:receiver', (req, res) => {
     const users = loadUsers();
     const found = users.find(u => u.username === receiver);
 
-    res.render('chat_user', {
+    res.render('chat_user', { 
         sender: req.session.user.username,
         receiver,
         receiverDp: found?.dp || '/images/dummy.jpg',
@@ -101,13 +96,16 @@ app.post('/uploadDp', (req, res) => {
     const uploadPath = `public/uploads/${username}_${Date.now()}.jpg`;
 
     file.mv(uploadPath, err => {
-        if (err) return res.status(500).send('Upload failed');
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error uploading file.');
+        }
         const users = loadUsers();
-        const i = users.findIndex(u => u.username === username);
-        if (i !== -1) {
-            users[i].dp = uploadPath.replace('public', '');
+        const userIndex = users.findIndex(u => u.username === username);
+        if (userIndex !== -1) {
+            users[userIndex].dp = uploadPath.replace('public', '');
             fs.writeFileSync('users.json', JSON.stringify(users, null, 2));
-            req.session.user.dp = users[i].dp;
+            req.session.user.dp = users[userIndex].dp;
         }
         res.redirect('/chat');
     });
@@ -117,11 +115,14 @@ app.post('/uploadDp', (req, res) => {
 io.on('connection', socket => {
     console.log('✅ User connected');
 
-    socket.on('register', ({ username }) => socket.join(username));
+    socket.on('register', ({ username }) => {
+        socket.join(username);
+    });
 
     socket.on('joinChat', async ({ sender, receiver }) => {
         socket.join(sender);
         socket.join(receiver);
+
         await db.markMessagesAsSeen(receiver, sender);
         db.fetchConversation(sender, receiver, (messages) => {
             socket.emit('loadOldMessages', messages);
@@ -131,19 +132,13 @@ io.on('connection', socket => {
 
     socket.on('chatMessage', async ({ sender, receiver, message, replyTo }) => {
         const messageId = await db.insertMessage(sender, receiver, message, 'text', replyTo);
-        io.to(receiver).emit('newMessage', {
-            _id: messageId, sender, receiver,
-            message, type: 'text', time: getCurrentTime(), replyTo
-        });
+        io.to(receiver).emit('newMessage', { _id: messageId, sender, receiver, message, type: 'text', time: getCurrentTime(), replyTo });
         socket.emit('messageSent', { _id: messageId });
     });
 
     socket.on('sendImage', async ({ sender, receiver, imageData, replyTo }) => {
         const messageId = await db.insertMessage(sender, receiver, imageData, 'image', replyTo);
-        io.to(receiver).emit('newMessage', {
-            _id: messageId, sender, receiver,
-            message: imageData, type: 'image', time: getCurrentTime(), replyTo
-        });
+        io.to(receiver).emit('newMessage', { _id: messageId, sender, receiver, message: imageData, type: 'image', time: getCurrentTime(), replyTo });
         socket.emit('messageSent', { _id: messageId });
     });
 
@@ -162,20 +157,15 @@ io.on('connection', socket => {
         io.emit('messageDeleted', { messageId });
     });
 
-    socket.on('disconnect', () => console.log('❌ User disconnected'));
+    socket.on('disconnect', () => {
+        console.log('❌ User disconnected');
+    });
 });
 
 function getCurrentTime() {
-    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// ✅ CONNECT DB + START SERVER
-(async () => {
-    try {
-        await db.connect();
-        const PORT = process.env.PORT || 3000;
-        server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
-    } catch (err) {
-        console.error('❌ Failed to start server:', err);
-    }
-})();
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));

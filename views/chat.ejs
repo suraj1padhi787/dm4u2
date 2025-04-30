@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <meta charset="UTF-8">
   <title>WhatsApp Clone</title>
   <link rel="stylesheet" href="/css/style.css?v=1.0">
@@ -152,19 +150,7 @@ document.getElementById('searchInput').addEventListener('keypress', async functi
 
     if (data.length > 0) {
       const user = data[0];
-
-// Check if already exists
-const alreadySaved = savedUsers.some(u => u.username === user.username);
-if (!alreadySaved) {
-  savedUsers.push({
-    username: user.username,
-    dp: user.dp || '/images/dummy.jpg'
-  });
-  localStorage.setItem(savedKey, JSON.stringify(savedUsers));
-}
-
-window.location.href = `/chat/${user.username}`;
- // ✅ direct chat open
+      window.location.href = `/chat/${user.username}`; // ✅ direct chat open
     } else {
       alert("User not found");
     }
