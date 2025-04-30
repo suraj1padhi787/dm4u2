@@ -313,4 +313,68 @@ body {
   -webkit-text-size-adjust: 100%;
   touch-action: manipulation;
 }
+/* ✅ BIGGER Chat Bubble + Premium Spacing */
+.message {
+  max-width: 80%;
+  font-size: 17px;
+  line-height: 1.5;
+  padding: 14px 18px;
+  margin: 12px 0;
+  border-radius: 18px;
+  word-wrap: break-word;
+}
+
+.message.sent {
+  background: #dcf8c6;
+  align-self: flex-end;
+  border-radius: 16px 16px 0px 16px;
+}
+
+.message.received {
+  background: #ffffff;
+  align-self: flex-start;
+  border-radius: 16px 16px 16px 0px;
+}
+
+/* ✅ BIGGER Buttons inside Bubble */
+.message-options button {
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-weight: 500;
+}
+
+/* ✅ Time below message cleaner */
+.message .time {
+  font-size: 12px;
+  margin-top: 6px;
+  color: #777;
+}
+
+/* ✅ Top Bar and Username Bigger */
+.chat-top-bar {
+  height: 70px;
+  padding: 15px;
+}
+.chat-username {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* ✅ Input Area Bigger */
+.message-input {
+  height: 65px;
+  padding: 12px 15px;
+}
+.message-input input[type="text"] {
+  font-size: 16px;
+  padding: 12px 18px;
+  border-radius: 25px;
+}
+.send-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+  border-radius: 50%;
+}
 
