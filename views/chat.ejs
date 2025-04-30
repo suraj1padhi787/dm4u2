@@ -1,28 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
   <title>WhatsApp Clone</title>
-  <link rel="stylesheet" href="/css/style.css?v=1.0">
+  <link rel="stylesheet" href="/css/style.css?v=1.2">
+  <style>
+    /* Premium Violet Theme */
+    body {
+      background: linear-gradient(135deg, #1E1B2E, #2C2644);
+      color: #E2E8F0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .top-bar.chat-top-bar {
+      background: linear-gradient(90deg, #6B46C1, #B794F4);
+      box-shadow: 0 2px 8px rgba(107, 70, 193, 0.5);
+      padding: 12px;
+      border-radius: 0 0 12px 12px;
+    }
+    .chat-dp {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #B794F4;
+    }
+    .chat-username {
+      font-weight: 600;
+      color: #F7FAFC;
+    }
+    .back-btn, .menu-btn {
+      color: #F7FAFC;
+      font-size: 20px;
+      transition: transform 0.2s;
+    }
+    .back-btn:hover, .menu-btn:hover {
+      transform: scale(1.1);
+      text-shadow: 0 0 8px #B794F4;
+    }
+    /* Sidebar Styling */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 280px;
+      height: 100%;
+      background: linear-gradient(180deg, #2C2644, #1E1B2E);
+      box-shadow: -4px 0 12px rgba(107, 70, 193, 0.3);
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      z-index: 1000;
+    }
+    .sidebar.active {
+      transform: translateX(0);
+    }
+    .sidebar.hidden {
+      display: none;
+    }
+    .sidebar-header {
+      padding: 20px;
+      text-align: center;
+      background: #6B46C1;
+      border-radius: 0 0 12px 12px;
+    }
+    .sidebar-dp {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid #B794F4;
+      margin-bottom: 10px;
+    }
+    .sidebar-content button {
+      display: block;
+      width: 80%;
+      margin: 10px auto;
+      padding: 10px;
+      background: linear-gradient(90deg, #6B46C1, #805AD5);
+      color: #F7FAFC;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(107, 70, 193, 0.4);
+    }
+    .sidebar-content button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(107, 70, 193, 0.6);
+      background: #B794F4;
+    }
+    /* Search Bar */
+    .search-bar {
+      padding: 10px;
+      background: #2D3748;
+      border-radius: 12px;
+      margin: 10px;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #4A5568;
+      color: #E2E8F0;
+      font-size: 14px;
+    }
+    .search-bar input:focus {
+      outline: none;
+      box-shadow: 0 0 8px rgba(107, 70, 193, 0.5);
+    }
+    /* Chat Item */
+    .chat-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      margin: 8px;
+      background: #2D3748;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+    .chat-item:hover {
+      background: #4A5568;
+      box-shadow: 0 2px 8px rgba(107, 70, 193, 0.3);
+    }
+    .chat-info h3 {
+      color: #F7FAFC;
+      font-size: 16px;
+    }
+    .chat-bottom p {
+      color: #A0AEC0;
+      font-size: 13px;
+    }
+    .time {
+      color: #B794F4;
+      font-size: 12px;
+    }
+    /* Floating Action Button */
+    .fab {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(45deg, #6B46C1, #B794F4);
+      color: #F7FAFC;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(107, 70, 193, 0.5);
+      transition: all 0.2s;
+    }
+    .fab:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(107, 70, 193, 0.7);
+    }
+    /* Bottom Navigation */
+    .bottom-nav {
+      background: #2C2644;
+      padding: 10px;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 -2px 8px rgba(107, 70, 193, 0.3);
+    }
+    .nav-btn {
+      flex: 1;
+      padding: 10px;
+      background: #4A5568;
+      color: #E2E8F0;
+      border: none;
+      border-radius: 8px;
+      margin: 0 5px;
+      transition: all 0.2s;
+    }
+    .nav-btn.active, .nav-btn:hover {
+      background: #6B46C1;
+      color: #F7FAFC;
+      box-shadow: 0 2px 8px rgba(107, 70, 193, 0.5);
+    }
+    /* Tabs */
+    .tab-content {
+      margin-bottom: 80px;
+    }
+    .center-text {
+      color: #A0AEC0;
+      text-align: center;
+      padding: 20px;
+    }
+    /* Responsive Design */
+    @media (max-width: 600px) {
+      .top-bar.chat-top-bar {
+        padding: 10px;
+      }
+      .chat-dp {
+        width: 36px;
+        height: 36px;
+      }
+      .sidebar {
+        width: 80%;
+      }
+      .fab {
+        bottom: 70px;
+        right: 15px;
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
 
 <!-- Top Bar -->
 <div class="top-bar chat-top-bar">
   <a href="/chat" class="back-btn">&larr;</a>
-  <img src="<%= user.dp || '/images/dummy.jpg' %>" class="chat-dp" alt="DP">
-  <span class="chat-username"><%= username %></span>
-
-  <!-- 3 Dot Menu Button -->
+  <img src="<%= user?.dp || '/images/dummy.jpg' %>" class="chat-dp" alt="DP">
+  <span class="chat-username"><%= username || 'User' %></span>
   <button class="menu-btn" onclick="toggleSidebar()">⋮</button>
 </div>
 
-<!-- Sidebar (hidden by default) -->
 <!-- Sidebar -->
 <div id="sidebar" class="sidebar hidden">
   <div class="sidebar-header">
-    <img src="<%= user.dp || '/images/dummy.jpg' %>" alt="DP" class="sidebar-dp">
-    <h2><%= username %></h2>
+    <img src="<%= user?.dp || '/images/dummy.jpg' %>" class="sidebar-dp">
+    <h2><%= username || 'User' %></h2>
   </div>
   <div class="sidebar-content">
     <button onclick="openDpUpload()">Change DP</button>
@@ -30,23 +229,16 @@
   </div>
 </div>
 
-
-
-
 <!-- Search Bar -->
 <div class="search-bar">
   <input type="text" id="searchInput" placeholder="Search username...">
 </div>
 
-<!-- Chats List -->
+<!-- Tabs -->
 <div id="savedUsersList" class="tab-content"></div>
-
-<!-- Status Tab -->
 <div id="status" class="tab-content" style="display:none;">
   <div class="center-text">No status available</div>
 </div>
-
-<!-- Calls Tab -->
 <div id="calls" class="tab-content" style="display:none;">
   <div class="call-item">
     <img src="/images/dummy.jpg" alt="DP">
@@ -78,20 +270,40 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-
 function toggleSidebar() {
+  try {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('active');
+    if (!sidebar) {
+      console.error('Sidebar element not found');
+      return;
+    }
+    if (sidebar.classList.contains('active')) {
+      sidebar.classList.remove('active');
+      sidebar.classList.add('hidden');
+    } else {
+      sidebar.classList.add('active');
+      sidebar.classList.remove('hidden');
+    }
+  } catch (error) {
+    console.error('Error toggling sidebar:', error);
+  }
 }
 
 function closeSidebar() {
+  try {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.remove('active');
+    if (sidebar) {
+      sidebar.classList.remove('active');
+      sidebar.classList.add('hidden');
+    }
+  } catch (error) {
+    console.error('Error closing sidebar:', error);
+  }
 }
 
 function openDpUpload() {
-    closeSidebar(); // sidebar close hote hi
-    window.location.href = '/upload-dp'; // Upload page par jaega
+  closeSidebar();
+  window.location.href = '/upload-dp';
 }
 
 const socket = io();
@@ -99,89 +311,109 @@ const sender = "<%= username %>";
 const savedKey = `savedUsers_${sender}`;
 let savedUsers = JSON.parse(localStorage.getItem(savedKey)) || [];
 
-// Render Saved Users (dp ke saath)
 function renderSavedUsers() {
-  const savedDiv = document.getElementById('savedUsersList');
-  savedDiv.innerHTML = '';
+  try {
+    const savedDiv = document.getElementById('savedUsersList');
+    if (!savedDiv) {
+      console.error('Saved users list element not found');
+      return;
+    }
+    savedDiv.innerHTML = '';
 
-  if (savedUsers.length === 0) {
-    savedDiv.innerHTML = '<p style="text-align:center;color:gray;">No chats yet</p>';
-    return;
-  }
-
-  savedUsers.forEach((user, index) => {
-    savedDiv.innerHTML += `
-      <div class="chat-item">
-        <a href="/chat/${user.username}">
-          <img src="${user.dp || '/images/dummy.jpg'}" alt="DP" class="chat-dp">
-          <div class="chat-info">
-            <div class="chat-top">
-              <h3>${user.username}</h3>
-              <span class="time">Just now</span>
-            </div>
-            <div class="chat-bottom">
-              <p>Start a chat with ${user.username}</p>
-            </div>
-          </div>
-        </a>
-        <button onclick="deleteUser(${index})" style="background:red;color:white;border:none;padding:5px 10px;margin-left:10px;">🗑️</button>
-      </div>
-    `;
-  });
-}
-
-
-
-// Delete User
-function deleteUser(index) {
-  savedUsers.splice(index, 1);
-  localStorage.setItem(savedKey, JSON.stringify(savedUsers));
-  renderSavedUsers();
-}
-
-// Search and Save User with DP
-document.getElementById('searchInput').addEventListener('keypress', async function(e) {
-  if (e.key === 'Enter') { // Enter dabane pe chalega
-    const query = this.value.trim();
-    if (!query) return;
-
-    const res = await fetch(`/searchUser?username=${query}`);
-    const data = await res.json();
-
-    if (data.length > 0) {
-      const user = data[0];
-      window.location.href = `/chat/${user.username}`; // ✅ direct chat open
-    } else {
-      alert("User not found");
+    if (savedUsers.length === 0) {
+      savedDiv.innerHTML = '<p style="text-align:center;color:#A0AEC0;">No chats yet</p>';
+      return;
     }
 
-    this.value = '';
+    savedUsers.forEach((user, index) => {
+      savedDiv.innerHTML += `
+        <div class="chat-item">
+          <a href="/chat/${user.username}">
+            <img src="${user.dp || '/images/dummy.jpg'}" class="chat-dp" alt="DP">
+            <div class="chat-info">
+              <div class="chat-top">
+                <h3>${user.username}</h3>
+                <span class="time">Just now</span>
+              </div>
+              <div class="chat-bottom">
+                <p>Start a chat with ${user.username}</p>
+              </div>
+            </div>
+          </a>
+          <button onclick="deleteUser(${index})" style="background:#DC2626;color:#F7FAFC;border:none;padding:5px 10px;border-radius:8px;">🗑️</button>
+        </div>
+      `;
+    });
+  } catch (error) {
+    console.error('Error rendering saved users:', error);
+  }
+}
+
+function deleteUser(index) {
+  try {
+    savedUsers.splice(index, 1);
+    localStorage.setItem(savedKey, JSON.stringify(savedUsers));
+    renderSavedUsers();
+  } catch (error) {
+    console.error('Error deleting user:', error);
+  }
+}
+
+document.getElementById('searchInput').addEventListener('keypress', async function(e) {
+  try {
+    if (e.key === 'Enter') {
+      const query = this.value.trim();
+      if (!query) return;
+
+      const res = await fetch(`/searchUser?username=${query}`);
+      const data = await res.json();
+
+      if (data.length > 0) {
+        const user = data[0];
+        const alreadySaved = savedUsers.some(u => u.username === user.username);
+        if (!alreadySaved) {
+          savedUsers.push({
+            username: user.username,
+            dp: user.dp || '/images/dummy.jpg'
+          });
+          localStorage.setItem(savedKey, JSON.stringify(savedUsers));
+        }
+        window.location.href = `/chat/${user.username}`;
+      } else {
+        alert("User not found");
+      }
+
+      this.value = '';
+    }
+  } catch (error) {
+    console.error('Error searching user:', error);
+    alert('Error searching user. Please try again.');
   }
 });
 
-
-// Tab Switcher
 function showTab(tabName) {
-  document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
-  document.getElementById(tabName).style.display = 'block';
-  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-  document.querySelector(`.nav-btn[onclick="showTab('${tabName}')"]`).classList.add('active');
+  try {
+    document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+    const tab = document.getElementById(tabName);
+    if (tab) {
+      tab.style.display = 'block';
+    }
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.querySelector(`.nav-btn[onclick="showTab('${tabName}')"]`);
+    if (activeBtn) {
+      activeBtn.classList.add('active');
+    }
+  } catch (error) {
+    console.error('Error showing tab:', error);
+  }
 }
 
-// Sidebar Controls
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  sidebar.style.display = sidebar.style.display === 'block' ? 'none' : 'block';
+// Initialize
+try {
+  renderSavedUsers();
+} catch (error) {
+  console.error('Error initializing:', error);
 }
-function openDpUpload() {
-  window.location.href = '/upload-dp';
-}
-function closeSidebar() {
-  document.getElementById('sidebar').style.display = 'none';
-}
-
-// Initial Render
-renderSavedUsers();
 </script>
 
 </body>
