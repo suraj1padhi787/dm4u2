@@ -149,7 +149,7 @@ html, body {
 
 /* --- Chat Messages Area --- */
 .chat-messages {
-  height: 65vh; /* Reduced height for mobile */
+  height: 75vh; /* Reduced height for mobile */
   overflow-y: auto;
   padding: 15px;
   display: flex;
