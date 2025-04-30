@@ -3,18 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Chat with <%= receiver %></title>
-  <link rel="stylesheet" href="/css/style.css?v=1.0">
-  <style>
-    /* Premium Buttons */
-    .message-options {
-      margin-top: 5px;
-      display: flex;
-      gap: 6px;
-    }<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Chat with <%= receiver %></title>
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#6B46C1">
@@ -253,7 +241,7 @@
 
 <!-- Top Bar -->
 <div class="top-bar chat-top-bar">
-  <a href="/chat" class="back-btn">&larr;</a>
+  <a href="/chat" class="back-btn">←</a>
   <img src="<%= receiverDp || '/images/dummy.jpg' %>" class="chat-dp" alt="DP">
   <div style="display:flex;flex-direction:column;">
     <span class="chat-username"><%= receiver %></span>
@@ -300,283 +288,323 @@
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
 <script>
-const socket = io({ transports: ['websocket'], upgrade: false });
-const sender = "<%= sender %>";
-const receiver = "<%= receiver %>";
-
-const messagesDiv = document.getElementById('messages');
-const messageInput = document.getElementById('messageInput');
-const sendButton = document.getElementById('sendButton');
-const imageInput = document.getElementById('imageInput');
-const imagePreviewText = document.getElementById('imagePreviewText');
-const statusText = document.getElementById('statusText');
-const replyPreview = document.getElementById('replyPreview');
-const editPreview = document.getElementById('editPreview');
-const callModal = document.getElementById('callModal');
-const callStatus = document.getElementById('callStatus');
-const remoteVideo = document.getElementById('remoteVideo');
-const localVideo = document.getElementById('localVideo');
-
-let selectedImageData = null;
-let replyToContent = null;
-let editingMessageId = null;
-let peer = null;
-let localStream = null;
-
-// --- Register and Join ---
-socket.emit('register', { username: sender });
-socket.emit('joinChat', { sender, receiver });
-socket.emit('seen', { sender, receiver });
-
-// --- Load Old Messages ---
-socket.on('loadOldMessages', (messages) => {
-  messages.forEach(msg => {
-    const type = msg.sender === sender ? 'sent' : 'received';
-    addMessageBubble(msg._id, msg.content, type, msg.type, msg.time, msg.seen, msg.replyTo);
+try {
+  const socket = io({ transports: ['websocket'], upgrade: false });
+  socket.on('connect_error', (error) => {
+    console.error('Socket.IO connection error:', error);
   });
-});
 
-// --- Typing Detect ---
-messageInput.addEventListener('input', () => {
-  if (messageInput.value.trim() !== '' || selectedImageData) {
-    sendButton.disabled = false;
-    socket.emit('typing', sender);
-  } else {
-    sendButton.disabled = true;
-  }
-});
+  const sender = "<%= sender %>";
+  const receiver = "<%= receiver %>";
 
-// --- Image Select ---
-imageInput.addEventListener('change', function() {
-  const file = this.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      selectedImageData = e.target.result;
-      imagePreviewText.innerText = "📷 Image selected ✅";
-      sendButton.disabled = false;
-    };
-    reader.readAsDataURL(file);
-  }
-});
+  const messagesDiv = document.getElementById('messages');
+  const messageInput = document.getElementById('messageInput');
+  const sendButton = document.getElementById('sendButton');
+  const imageInput = document.getElementById('imageInput');
+  const imagePreviewText = document.getElementById('imagePreviewText');
+  const statusText = document.getElementById('statusText');
+  const replyPreview = document.getElementById('replyPreview');
+  const editPreview = document.getElementById('editPreview');
+  const callModal = document.getElementById('callModal');
+  const callStatus = document.getElementById('callStatus');
+  const remoteVideo = document.getElementById('remoteVideo');
+  const localVideo = document.getElementById('localVideo');
 
-// --- Send or Edit Message ---
-sendButton.addEventListener('click', () => {
-  if (editingMessageId) {
-    const newText = messageInput.value.trim();
-    if (newText) {
-      socket.emit('editMessage', { messageId: editingMessageId, newContent: newText });
+  let selectedImageData = null;
+  let replyToContent = null;
+  let editingMessageId = null;
+  let peer = null;
+  let localStream = null;
+
+  // --- Register and Join ---
+  socket.emit('register', { username: sender });
+  socket.emit('joinChat', { sender, receiver });
+  socket.emit('seen', { sender, receiver });
+
+  // --- Load Old Messages ---
+  socket.on('loadOldMessages', (messages) => {
+    try {
+      messages.forEach(msg => {
+        const type = msg.sender === sender ? 'sent' : 'received';
+        addMessageBubble(msg._id, msg.content, type, msg.type, msg.time, msg.seen, msg.replyTo);
+      });
+    } catch (error) {
+      console.error('Error loading messages:', error);
     }
-    editingMessageId = null;
-    editPreview.style.display = 'none';
-    messageInput.value = '';
-  } else if (selectedImageData) {
-    socket.emit('sendImage', { sender, receiver, imageData: selectedImageData, replyTo: replyToContent });
-    addMessageBubble(null, selectedImageData, 'sent', 'image', getCurrentTime(), false, replyToContent);
-    selectedImageData = null;
-    imagePreviewText.innerText = '';
-  } else {
-    const message = messageInput.value.trim();
-    if (message) {
-      socket.emit('chatMessage', { sender, receiver, message, replyTo: replyToContent });
-      addMessageBubble(null, message, 'sent', 'text', getCurrentTime(), false, replyToContent);
-      messageInput.value = '';
-    }
-  }
-  clearReply();
-  sendButton.disabled = true;
-});
+  });
 
-// --- Bubble ID Assign on Send ---
-socket.on('messageSent', ({ _id }) => {
-  const bubbles = document.querySelectorAll('.message.sent');
-  const lastBubble = bubbles[bubbles.length - 1];
-  if (lastBubble) lastBubble.setAttribute('data-id', _id);
-});
-
-// --- Real-time New Message ---
-socket.on('newMessage', (data) => {
-  if (data.sender === receiver && data.receiver === sender) {
-    addMessageBubble(data._id, data.message, 'received', data.type, data.time, true, data.replyTo);
-    socket.emit('seen', { sender, receiver });
-  }
-});
-
-// --- Real-time Seen Update (Double Tick) ---
-socket.on('seenUpdate', ({ sender: seenSender, receiver: seenReceiver }) => {
-  if (sender === seenReceiver && receiver === seenSender) {
-    const allSent = document.querySelectorAll('.message.sent .time');
-    if (allSent.length > 0) {
-      const lastTime = allSent[allSent.length - 1];
-      if (lastTime.innerHTML.includes('✔') && !lastTime.innerHTML.includes('✔✔')) {
-        lastTime.innerHTML = lastTime.innerHTML.replace('✔', '✔✔');
+  // --- Typing Detect ---
+  messageInput.addEventListener('input', () => {
+    try {
+      if (messageInput.value.trim() !== '' || selectedImageData) {
+        sendButton.disabled = false;
+        socket.emit('typing', sender);
+      } else {
+        sendButton.disabled = true;
       }
+    } catch (error) {
+      console.error('Typing detect error:', error);
     }
-  }
-});
+  });
 
-// --- Real-time Edit Message ---
-socket.on('messageEdited', ({ messageId, newContent }) => {
-  const bubble = document.querySelector(`.message[data-id="${messageId}"]`);
-  if (bubble) {
-    bubble.querySelector('div').innerText = newContent + " (edited)";
-  }
-});
-
-// --- Real-time Delete Message ---
-socket.on('messageDeleted', ({ messageId }) => {
-  const bubble = document.querySelector(`.message[data-id="${messageId}"]`);
-  if (bubble) bubble.remove();
-});
-
-// --- Add Message Bubble Function ---
-function addMessageBubble(id, content, typeBubble, messageType = 'text', time = getCurrentTime(), seen = false, replyTo = null) {
-  const bubble = document.createElement('div');
-  bubble.classList.add('message', typeBubble);
-  if (id) bubble.setAttribute('data-id', id);
-
-  let ticks = typeBubble === 'sent' ? (seen ? '✔✔' : '✔') : '';
-  let replyHtml = replyTo ? `<div class="reply-preview">${replyTo}</div>` : '';
-
-  let optionsHtml = `<div class="message-options"><button class="reply-btn" onclick="startReply('${content}')">Reply</button>`;
-  if (typeBubble === 'sent') {
-    optionsHtml += `<button class="edit-btn" onclick="startEdit(this)">Edit</button><button class="delete-btn" onclick="deleteMessage(this)">Delete</button>`;
-  }
-  optionsHtml += `</div>`;
-
-  if (messageType === 'text') {
-    bubble.innerHTML = `${replyHtml}<div>${content}</div><div class="time">${time} ${ticks}</div>${optionsHtml}`;
-  } else {
-    bubble.innerHTML = `${replyHtml}<img src="${content}" style="max-width:160px; border-radius:10px;"><div class="time">${time} ${ticks}</div>${optionsHtml}`;
-  }
-
-  messagesDiv.appendChild(bubble);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
-
-// --- Start Reply ---
-function startReply(content) {
-  replyToContent = content;
-  replyPreview.style.display = 'block';
-  replyPreview.innerText = `Replying to: "${content}"`;
-}
-
-// --- Start Edit ---
-function startEdit(btn) {
-  const bubble = btn.closest('.message');
-  const text = bubble.querySelector('div').innerText.replace(' (edited)', '');
-  editingMessageId = bubble.getAttribute('data-id');
-  messageInput.value = text;
-  editPreview.style.display = 'block';
-}
-
-// --- Delete Message ---
-function deleteMessage(btn) {
-  const bubble = btn.closest('.message');
-  const messageId = bubble.getAttribute('data-id');
-  if (messageId) {
-    socket.emit('deleteMessage', { messageId });
-  }
-  bubble.remove();
-}
-
-// --- Helpers ---
-function clearReply() {
-  replyToContent = null;
-  replyPreview.style.display = 'none';
-}
-
-function getCurrentTime() {
-  const now = new Date();
-  return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-// --- Online / Typing System ---
-socket.on('userOnline', (username) => {
-  if (username === receiver) statusText.innerText = 'Online';
-});
-
-socket.on('userOffline', ({ username, lastSeen }) => {
-  if (username === receiver) statusText.innerText = `Last seen at ${lastSeen}`;
-});
-
-socket.on('typing', (username) => {
-  if (username === receiver) {
-    statusText.innerText = 'Typing...';
-    setTimeout(() => socket.emit('checkOnline', receiver), 2000);
-  }
-});
-
-socket.emit('checkOnlineStatus', receiver);
-
-socket.on('userIsOnline', (username) => {
-  if (username === receiver) statusText.innerText = 'Online';
-});
-
-socket.on('userIsOffline', (username) => {
-  if (username === receiver) statusText.innerText = 'Last seen recently';
-});
-
-setInterval(() => socket.emit('checkOnline', receiver), 5000);
-
-// --- WebRTC Call System ---
-async function startCall(type) {
-  try {
-    callModal.classList.add('active');
-    callStatus.innerText = 'Requesting permissions...';
-
-    const constraints = type === 'voice' ? { audio: true, video: false } : { audio: true, video: { width: 640, height: 480 } };
-    localStream = await navigator.mediaDevices.getUserMedia(constraints);
-    
-    if (type === 'video') {
-      localVideo.srcObject = localStream;
-      localVideo.style.display = 'block';
-      remoteVideo.style.display = 'block';
-    }
-
-    callStatus.innerText = 'Calling...';
-    socket.emit('call', { sender, receiver, type });
-
-    peer = new SimplePeer({
-      initiator: true,
-      trickle: false,
-      stream: localStream,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
+  // --- Image Select ---
+  imageInput.addEventListener('change', function() {
+    try {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          selectedImageData = e.target.result;
+          imagePreviewText.innerText = "📷 Image selected ✅";
+          sendButton.disabled = false;
+        };
+        reader.readAsDataURL(file);
       }
-    });
+    } catch (error) {
+      console.error('Image select error:', error);
+    }
+  });
 
-    peer.on('signal', data => {
-      socket.emit('signal', { sender, receiver, data });
-    });
+  // --- Send or Edit Message ---
+  sendButton.addEventListener('click', () => {
+    try {
+      if (editingMessageId) {
+        const newText = messageInput.value.trim();
+        if (newText) {
+          socket.emit('editMessage', { messageId: editingMessageId, newContent: newText });
+        }
+        editingMessageId = null;
+        editPreview.style.display = 'none';
+        messageInput.value = '';
+      } else if (selectedImageData) {
+        socket.emit('sendImage', { sender, receiver, imageData: selectedImageData, replyTo: replyToContent });
+        addMessageBubble(null, selectedImageData, 'sent', 'image', getCurrentTime(), false, replyToContent);
+        selectedImageData = null;
+        imagePreviewText.innerText = '';
+      } else {
+        const message = messageInput.value.trim();
+        if (message) {
+          socket.emit('chatMessage', { sender, receiver, message, replyTo: replyToContent });
+          addMessageBubble(null, message, 'sent', 'text', getCurrentTime(), false, replyToContent);
+          messageInput.value = '';
+        }
+      }
+      clearReply();
+      sendButton.disabled = true;
+    } catch (error) {
+      console.error('Send/edit message error:', error);
+    }
+  });
 
-    peer.on('stream', stream => {
-      remote时代Video.srcObject = stream;
-      callStatus.innerText = 'Connected';
-    });
+  // --- Bubble ID Assign on Send ---
+  socket.on('messageSent', ({ _id }) => {
+    try {
+      const bubbles = document.querySelectorAll('.message.sent');
+      const lastBubble = bubbles[bubbles.length - 1];
+      if (lastBubble) lastBubble.setAttribute('data-id', _id);
+    } catch (error) {
+      console.error('Message sent error:', error);
+    }
+  });
 
-    peer.on('error', err => {
-      console.error('Peer error:', err);
-      endCall();
-      alert('Call failed. Please try again.');
-    });
+  // --- Real-time New Message ---
+  socket.on('newMessage', (data) => {
+    try {
+      if (data.sender === receiver && data.receiver === sender) {
+        addMessageBubble(data._id, data.message, 'received', data.type, data.time, true, data.replyTo);
+        socket.emit('seen', { sender, receiver });
+      }
+    } catch (error) {
+      console.error('New message error:', error);
+    }
+  });
 
-  } catch (error) {
-    console.error('Error starting call:', error);
-    endCall();
-    alert('Failed to access microphone/camera. Please check permissions.');
+  // --- Real-time Seen Update (Double Tick) ---
+  socket.on('seenUpdate', ({ sender: seenSender, receiver: seenReceiver }) => {
+    try {
+      if (sender === seenReceiver && receiver === seenSender) {
+        const allSent = document.querySelectorAll('.message.sent .time');
+        if (allSent.length > 0) {
+          const lastTime = allSent[allSent.length - 1];
+          if (lastTime.innerHTML.includes('✔') && !lastTime.innerHTML.includes('✔✔')) {
+            lastTime.innerHTML = lastTime.innerHTML.replace('✔', '✔✔');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Seen update error:', error);
+    }
+  });
+
+  // --- Real-time Edit Message ---
+  socket.on('messageEdited', ({ messageId, newContent }) => {
+    try {
+      const bubble = document.querySelector(`.message[data-id="${messageId}"]`);
+      if (bubble) {
+        bubble.querySelector('div').innerText = newContent + " (edited)";
+      }
+    } catch (error) {
+      console.error('Message edited error:', error);
+    }
+  });
+
+  // --- Real-time Delete Message ---
+  socket.on('messageDeleted', ({ messageId }) => {
+    try {
+      const bubble = document.querySelector(`.message[data-id="${messageId}"]`);
+      if (bubble) bubble.remove();
+    } catch (error) {
+      console.error('Message deleted error:', error);
+    }
+  });
+
+  // --- Add Message Bubble Function ---
+  function addMessageBubble(id, content, typeBubble, messageType = 'text', time = getCurrentTime(), seen = false, replyTo = null) {
+    try {
+      const bubble = document.createElement('div');
+      bubble.classList.add('message', typeBubble);
+      if (id) bubble.setAttribute('data-id', id);
+
+      let ticks = typeBubble === 'sent' ? (seen ? '✔✔' : '✔') : '';
+      let replyHtml = replyTo ? `<div class="reply-preview">${replyTo}</div>` : '';
+
+      let optionsHtml = `<div class="message-options"><button class="reply-btn" onclick="startReply('${content}')">Reply</button>`;
+      if (typeBubble === 'sent') {
+        optionsHtml += `<button class="edit-btn" onclick="startEdit(this)">Edit</button><button class="delete-btn" onclick="deleteMessage(this)">Delete</button>`;
+      }
+      optionsHtml += `</div>`;
+
+      if (messageType === 'text') {
+        bubble.innerHTML = `${replyHtml}<div>${content}</div><div class="time">${time} ${ticks}</div>${optionsHtml}`;
+      } else {
+        bubble.innerHTML = `${replyHtml}<img src="${content}" style="max-width:160px; border-radius:10px;"><div class="time">${time} ${ticks}</div>${optionsHtml}`;
+      }
+
+      messagesDiv.appendChild(bubble);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    } catch (error) {
+      console.error('Add message bubble error:', error);
+    }
   }
-}
 
-socket.on('call', async ({ sender: caller, type }) => {
-  try {
-    if (caller === receiver) {
+  // --- Start Reply ---
+  function startReply(content) {
+    try {
+      replyToContent = content;
+      replyPreview.style.display = 'block';
+      replyPreview.innerText = `Replying to: "${content}"`;
+    } catch (error) {
+      console.error('Start reply error:', error);
+    }
+  }
+
+  // --- Start Edit ---
+  function startEdit(btn) {
+    try {
+      const bubble = btn.closest('.message');
+      const text = bubble.querySelector('div').innerText.replace(' (edited)', '');
+      editingMessageId = bubble.getAttribute('data-id');
+      messageInput.value = text;
+      editPreview.style.display = 'block';
+    } catch (error) {
+      console.error('Start edit error:', error);
+    }
+  }
+
+  // --- Delete Message ---
+  function deleteMessage(btn) {
+    try {
+      const bubble = btn.closest('.message');
+      const messageId = bubble.getAttribute('data-id');
+      if (messageId) {
+        socket.emit('deleteMessage', { messageId });
+      }
+      bubble.remove();
+    } catch (error) {
+      console.error('Delete message error:', error);
+    }
+  }
+
+  // --- Helpers ---
+  function clearReply() {
+    try {
+      replyToContent = null;
+      replyPreview.style.display = 'none';
+    } catch (error) {
+      console.error('Clear reply error:', error);
+    }
+  }
+
+  function getCurrentTime() {
+    try {
+      const now = new Date();
+      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (error) {
+      console.error('Get time error:', error);
+      return '';
+    }
+  }
+
+  // --- Online / Typing System ---
+  socket.on('userOnline', (username) => {
+    try {
+      if (username === receiver) statusText.innerText = 'Online';
+    } catch (error) {
+      console.error('User online error:', error);
+    }
+  });
+
+  socket.on('userOffline', ({ username, lastSeen }) => {
+    try {
+      if (username === receiver) statusText.innerText = `Last seen at ${lastSeen}`;
+    } catch (error) {
+      console.error('User offline error:', error);
+    }
+  });
+
+  socket.on('typing', (username) => {
+    try {
+      if (username === receiver) {
+        statusText.innerText = 'Typing...';
+        setTimeout(() => socket.emit('checkOnline', receiver), 2000);
+      }
+    } catch (error) {
+      console.error('Typing error:', error);
+    }
+  });
+
+  socket.emit('checkOnlineStatus', receiver);
+
+  socket.on('userIsOnline', (username) => {
+    try {
+      if (username === receiver) statusText.innerText = 'Online';
+    } catch (error) {
+      console.error('User is online error:', error);
+    }
+  });
+
+  socket.on('userIsOffline', (username) => {
+    try {
+      if (username === receiver) statusText.innerText = 'Last seen recently';
+    } catch (error) {
+      console.error('User is offline error:', error);
+    }
+  });
+
+  setInterval(() => {
+    try {
+      socket.emit('checkOnline', receiver);
+    } catch (error) {
+      console.error('Check online error:', error);
+    }
+  }, 5000);
+
+  // --- WebRTC Call System ---
+  async function startCall(type) {
+    try {
       callModal.classList.add('active');
-      callStatus.innerText = 'Incoming call...';
-      
+      callStatus.innerText = 'Requesting permissions...';
+
       const constraints = type === 'voice' ? { audio: true, video: false } : { audio: true, video: { width: 640, height: 480 } };
       localStream = await navigator.mediaDevices.getUserMedia(constraints);
       
@@ -586,25 +614,37 @@ socket.on('call', async ({ sender: caller, type }) => {
         remoteVideo.style.display = 'block';
       }
 
+      callStatus.innerText = 'Calling...';
+      socket.emit('call', { sender, receiver, type });
+
       peer = new SimplePeer({
-        initiator: false,
+        initiator: true,
         trickle: false,
         stream: localStream,
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
           ]
         }
       });
 
       peer.on('signal', data => {
-        socket.emit('signal', { sender, receiver: caller, data });
+        try {
+          socket.emit('signal', { sender, receiver, data });
+        } catch (error) {
+          console.error('Signal emit error:', error);
+        }
       });
 
       peer.on('stream', stream => {
-        remoteVideo.srcObject = stream;
-        callStatus.innerText = 'Connected';
+        try {
+          remoteVideo.srcObject = stream;
+          callStatus.innerText = 'Connected';
+        } catch (error) {
+          console.error('Stream error:', error);
+        }
       });
 
       peer.on('error', err => {
@@ -613,355 +653,135 @@ socket.on('call', async ({ sender: caller, type }) => {
         alert('Call failed. Please try again.');
       });
 
-      socket.emit('acceptCall', { sender, receiver: caller });
-    }
-  } catch (error) {
-    console.error('Error accepting call:', error);
-    endCall();
-    alert('Failed to access microphone/camera. Please check permissions.');
-  }
-});
-
-socket.on('acceptCall', ({ sender: accepter }) => {
-  if (accepter === receiver) {
-    callStatus.innerText = 'Connecting...';
-  }
-});
-
-socket.on('signal', ({ sender: signalSender, data }) => {
-  if (signalSender === receiver && peer) {
-    peer.signal(data);
-  }
-});
-
-socket.on('endCall', ({ sender: ender }) => {
-  if (ender === receiver) {
-    endCall();
-  }
-});
-
-function hangUp() {
-  socket.emit('endCall', { sender, receiver });
-  endCall();
-}
-
-function endCall() {
-  if (peer) {
-    peer.destroy();
-    peer = null;
-  }
-  if (localStream) {
-    localStream.getTracks().forEach(track => track.stop());
-    localStream = null;
-  }
-  callModal.classList.remove('active');
-  callStatus.innerText = 'Connecting...';
-  localVideo.srcObject = null;
-  remoteVideo.srcObject = null;
-  localVideo.style.display = 'none';
-  remoteVideo.style.display = 'none';
-}
-</script>
-
-</body>
-</html>
-    .message-options button {
-      border: none;
-      padding: 4px 8px;
-      font-size: 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      color: white;
-    }
-    .reply-btn { background-color: #007bff; }
-    .edit-btn { background-color: #28a745; }
-    .delete-btn { background-color: #dc3545; }
-    
-    /* Reply Preview */
-    .reply-preview {
-      background: #f1f0f0;
-      padding: 4px 8px;
-      border-left: 4px solid #34b7f1;
-      font-size: 13px;
-      margin-bottom: 5px;
-      border-radius: 5px;
-    }
-    
-    /* Edit Preview */
-    #editPreview {
-      background: #fff3cd;
-      color: #856404;
-      padding: 5px 10px;
-      border-left: 4px solid #ffc107;
-      margin: 5px;
-      font-size: 13px;
-      display: none;
-    }
-  </style>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-  <meta name="theme-color" content="#34b7f1">
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
-      .then(reg => console.log('✅ Service Worker registered'))
-      .catch(err => console.log('❌ Service Worker failed', err));
-    }
-  </script>
-  
-</head>
-<body>
-
-<!-- Top Bar -->
-<div class="top-bar chat-top-bar">
-  <a href="/chat" class="back-btn">&larr;</a>
-  <img src="<%= receiverDp || '/images/dummy.jpg' %>" class="chat-dp" alt="DP">
-  <div style="display:flex;flex-direction:column;">
-    <span class="chat-username"><%= receiver %></span>
-    <span id="statusText" style="font-size:12px;color:white;">Last seen recently</span>
-  </div>
-</div>
-
-<!-- Chat Messages -->
-<div class="chat-messages" id="messages"></div>
-
-<!-- Typing Indicator -->
-<div id="typingIndicator" style="text-align:center;color:gray;margin:5px 0;"></div>
-
-<!-- Edit Mode Preview -->
-<div id="editPreview">Editing message...</div>
-
-<!-- Reply Mode Preview -->
-<div id="replyPreview" style="display:none;" class="reply-preview"></div>
-
-<!-- Message Input Area -->
-<div class="message-input">
-  <button class="emoji-btn">😊</button>
-  <input type="text" id="messageInput" placeholder="Type a message...">
-  <div class="input-icons">
-    <input type="file" id="imageInput" accept="image/*" style="display:none;">
-    <label for="imageInput" style="cursor:pointer;">📷</label>
-    <button id="sendButton" class="send-btn" disabled>➤</button>
-  </div>
-</div>
-
-<div id="imagePreviewText" style="text-align:center;color:green;margin:5px 0;font-size:13px;"></div>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-const socket = io();
-const sender = "<%= sender %>";
-const receiver = "<%= receiver %>";
-
-const messagesDiv = document.getElementById('messages');
-const messageInput = document.getElementById('messageInput');
-const sendButton = document.getElementById('sendButton');
-const imageInput = document.getElementById('imageInput');
-const imagePreviewText = document.getElementById('imagePreviewText');
-const statusText = document.getElementById('statusText');
-const replyPreview = document.getElementById('replyPreview');
-const editPreview = document.getElementById('editPreview');
-
-let selectedImageData = null;
-let replyToContent = null;
-let editingMessageId = null;
-
-// --- Register and Join ---
-socket.emit('register', { username: sender });
-socket.emit('joinChat', { sender, receiver });
-socket.emit('seen', { sender, receiver });
-
-// --- Load Old Messages ---
-socket.on('loadOldMessages', (messages) => {
-  messages.forEach(msg => {
-    const type = msg.sender === sender ? 'sent' : 'received';
-    addMessageBubble(msg._id, msg.content, type, msg.type, msg.time, msg.seen, msg.replyTo);
-  });
-});
-
-// --- Typing Detect ---
-messageInput.addEventListener('input', () => {
-  if (messageInput.value.trim() !== '' || selectedImageData) {
-    sendButton.disabled = false;
-    socket.emit('typing', sender);
-  } else {
-    sendButton.disabled = true;
-  }
-});
-
-// --- Image Select ---
-imageInput.addEventListener('change', function() {
-  const file = this.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      selectedImageData = e.target.result;
-      imagePreviewText.innerText = "📷 Image selected ✅";
-      sendButton.disabled = false;
-    };
-    reader.readAsDataURL(file);
-  }
-});
-
-// --- Send or Edit Message ---
-sendButton.addEventListener('click', () => {
-  if (editingMessageId) {
-    const newText = messageInput.value.trim();
-    if (newText) {
-      socket.emit('editMessage', { messageId: editingMessageId, newContent: newText });
-    }
-    editingMessageId = null;
-    editPreview.style.display = 'none';
-    messageInput.value = '';
-  } else if (selectedImageData) {
-    socket.emit('sendImage', { sender, receiver, imageData: selectedImageData, replyTo: replyToContent });
-    addMessageBubble(null, selectedImageData, 'sent', 'image', getCurrentTime(), false, replyToContent);
-    selectedImageData = null;
-    imagePreviewText.innerText = '';
-  } else {
-    const message = messageInput.value.trim();
-    if (message) {
-      socket.emit('chatMessage', { sender, receiver, message, replyTo: replyToContent });
-      addMessageBubble(null, message, 'sent', 'text', getCurrentTime(), false, replyToContent);
-      messageInput.value = '';
+    } catch (error) {
+      console.error('Error starting call:', error);
+      endCall();
+      alert('Failed to access microphone/camera. Please check permissions.');
     }
   }
-  clearReply();
-  sendButton.disabled = true;
-});
 
-// --- Bubble ID Assign on Send ---
-socket.on('messageSent', ({ _id }) => {
-  const bubbles = document.querySelectorAll('.message.sent');
-  const lastBubble = bubbles[bubbles.length - 1];
-  if (lastBubble) lastBubble.setAttribute('data-id', _id);
-});
+  socket.on('call', async ({ sender: caller, type }) => {
+    try {
+      if (caller === receiver) {
+        callModal.classList.add('active');
+        callStatus.innerText = 'Incoming call...';
+        
+        const constraints = type === 'voice' ? { audio: true, video: false } : { audio: true, video: { width: 640, height: 480 } };
+        localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        if (type === 'video') {
+          localVideo.srcObject = localStream;
+          localVideo.style.display = 'block';
+          remoteVideo.style.display = 'block';
+        }
 
-// --- Real-time New Message ---
-socket.on('newMessage', (data) => {
-  if (data.sender === receiver && data.receiver === sender) {
-    addMessageBubble(data._id, data.message, 'received', data.type, data.time, true, data.replyTo);
-    socket.emit('seen', { sender, receiver });
-  }
-});
+        peer = new SimplePeer({
+          initiator: false,
+          trickle: false,
+          stream: localStream,
+          config: {
+            iceServers: [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
+            ]
+          }
+        });
 
-// --- Real-time Seen Update (Double Tick) ---
-socket.on('seenUpdate', ({ sender: seenSender, receiver: seenReceiver }) => {
-  if (sender === seenReceiver && receiver === seenSender) {
-    const allSent = document.querySelectorAll('.message.sent .time');
-    if (allSent.length > 0) {
-      const lastTime = allSent[allSent.length - 1];
-      if (lastTime.innerHTML.includes('✔') && !lastTime.innerHTML.includes('✔✔')) {
-        lastTime.innerHTML = lastTime.innerHTML.replace('✔', '✔✔');
+        peer.on('signal', data => {
+          try {
+            socket.emit('signal', { sender, receiver: caller, data });
+          } catch (error) {
+            console.error('Signal emit error:', error);
+          }
+        });
+
+        peer.on('stream', stream => {
+          try {
+            remoteVideo.srcObject = stream;
+            callStatus.innerText = 'Connected';
+          } catch (error) {
+            console.error('Stream error:', error);
+          }
+        });
+
+        peer.on('error', err => {
+          console.error('Peer error:', err);
+          endCall();
+          alert('Call failed. Please try again.');
+        });
+
+        socket.emit('acceptCall', { sender, receiver: caller });
       }
+    } catch (error) {
+      console.error('Error accepting call:', error);
+      endCall();
+      alert('Failed to access microphone/camera. Please check permissions.');
+    }
+  });
+
+  socket.on('acceptCall', ({ sender: accepter }) => {
+    try {
+      if (accepter === receiver) {
+        callStatus.innerText = 'Connecting...';
+      }
+    } catch (error) {
+      console.error('Accept call error:', error);
+    }
+  });
+
+  socket.on('signal', ({ sender: signalSender, data }) => {
+    try {
+      if (signalSender === receiver && peer) {
+        peer.signal(data);
+      }
+    } catch (error) {
+      console.error('Signal error:', error);
+    }
+  });
+
+  socket.on('endCall', ({ sender: ender }) => {
+    try {
+      if (ender === receiver) {
+        endCall();
+      }
+    } catch (error) {
+      console.error('End call error:', error);
+    }
+  });
+
+  function hangUp() {
+    try {
+      socket.emit('endCall', { sender, receiver });
+      endCall();
+    } catch (error) {
+      console.error('Hang up error:', error);
     }
   }
-});
 
-// --- Real-time Edit Message ---
-socket.on('messageEdited', ({ messageId, newContent }) => {
-  const bubble = document.querySelector(`.message[data-id="${messageId}"]`);
-  if (bubble) {
-    bubble.querySelector('div').innerText = newContent + " (edited)";
+  function endCall() {
+    try {
+      if (peer) {
+        peer.destroy();
+        peer = null;
+      }
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+      callModal.classList.remove('active');
+      callStatus.innerText = 'Connecting...';
+      localVideo.srcObject = null;
+      remoteVideo.srcObject = null;
+      localVideo.style.display = 'none';
+      remoteVideo.style.display = 'none';
+    } catch (error) {
+      console.error('End call error:', error);
+    }
   }
-});
-
-// --- Real-time Delete Message ---
-socket.on('messageDeleted', ({ messageId }) => {
-  const bubble = document.querySelector(`.message[data-id="${messageId}"]`);
-  if (bubble) bubble.remove();
-});
-
-// --- Add Message Bubble Function ---
-function addMessageBubble(id, content, typeBubble, messageType = 'text', time = getCurrentTime(), seen = false, replyTo = null) {
-  const bubble = document.createElement('div');
-  bubble.classList.add('message', typeBubble);
-  if (id) bubble.setAttribute('data-id', id);
-
-  let ticks = typeBubble === 'sent' ? (seen ? '✔✔' : '✔') : '';
-  let replyHtml = replyTo ? `<div class="reply-preview">${replyTo}</div>` : '';
-
-  let optionsHtml = `<div class="message-options"><button class="reply-btn" onclick="startReply('${content}')">Reply</button>`;
-  if (typeBubble === 'sent') {
-    optionsHtml += `<button class="edit-btn" onclick="startEdit(this)">Edit</button><button class="delete-btn" onclick="deleteMessage(this)">Delete</button>`;
-  }
-  optionsHtml += `</div>`;
-
-  if (messageType === 'text') {
-    bubble.innerHTML = `${replyHtml}<div>${content}</div><div class="time">${time} ${ticks}</div>${optionsHtml}`;
-  } else {
-    bubble.innerHTML = `${replyHtml}<img src="${content}" style="max-width:160px; border-radius:10px;"><div class="time">${time} ${ticks}</div>${optionsHtml}`;
-  }
-
-  messagesDiv.appendChild(bubble);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+} catch (error) {
+  console.error('Initialization error:', error);
 }
-
-// --- Start Reply ---
-function startReply(content) {
-  replyToContent = content;
-  replyPreview.style.display = 'block';
-  replyPreview.innerText = `Replying to: "${content}"`;
-}
-
-// --- Start Edit ---
-function startEdit(btn) {
-  const bubble = btn.closest('.message');
-  const text = bubble.querySelector('div').innerText.replace(' (edited)', '');
-  editingMessageId = bubble.getAttribute('data-id');
-  messageInput.value = text;
-  editPreview.style.display = 'block';
-}
-
-// --- Delete Message ---
-function deleteMessage(btn) {
-  const bubble = btn.closest('.message');
-  const messageId = bubble.getAttribute('data-id');
-  if (messageId) {
-    socket.emit('deleteMessage', { messageId });
-  }
-  bubble.remove();
-}
-
-// --- Helpers ---
-function clearReply() {
-  replyToContent = null;
-  replyPreview.style.display = 'none';
-}
-
-function getCurrentTime() {
-  const now = new Date();
-  return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-// --- Online / Typing System ---
-socket.on('userOnline', (username) => {
-  if (username === receiver) statusText.innerText = 'Online';
-});
-
-socket.on('userOffline', ({ username, lastSeen }) => {
-  if (username === receiver) statusText.innerText = `Last seen at ${lastSeen}`;
-});
-
-socket.on('typing', (username) => {
-  if (username === receiver) {
-    statusText.innerText = 'Typing...';
-    setTimeout(() => socket.emit('checkOnline', receiver), 2000);
-  }
-});
-
-socket.emit('checkOnlineStatus', receiver);
-
-socket.on('userIsOnline', (username) => {
-  if (username === receiver) statusText.innerText = 'Online';
-});
-
-socket.on('userIsOffline', (username) => {
-  if (username === receiver) statusText.innerText = 'Last seen recently';
-});
-
-setInterval(() => socket.emit('checkOnline', receiver), 5000);
 </script>
 
 </body>
