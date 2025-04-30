@@ -11,48 +11,94 @@ const setupOnlineTracking = require('./online');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketio(server);
+const io = socketio(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  },
+  transports: ['websocket'] // Force WebSocket to avoid polling issues
+});
 setupOnlineTracking(io);
 
 // Create directories if they don't exist
-const uploadsDir = path.join(__dirname, 'public/uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-const dbDir = path.join(__dirname, 'chat.db');
-if (!fs.existsSync(path.dirname(dbDir))) {
-  fs.mkdirSync(path.dirname(dbDir), { recursive: true });
+try {
+  const uploadsDir = path.join(__dirname, 'public/uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log('Created uploads directory');
+  }
+
+  const dbDir = path.join(__dirname, 'chat.db');
+  if (!fs.existsSync(path.dirname(dbDir))) {
+    fs.mkdirSync(path.dirname(dbDir), { recursive: true });
+    console.log('Created database directory');
+  }
+
+  const usersFile = path.join(__dirname, 'users.json');
+  if (!fs.existsSync(usersFile)) {
+    fs.writeFileSync(usersFile, '[]');
+    console.log('Created users.json');
+  }
+} catch (error) {
+  console.error('Error creating directories:', error);
 }
 
 // Static and Middlewares
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(session({ secret: 'whatsappclone', resave: false, saveUninitialized: true }));
+app.use(session({ 
+  secret: 'whatsappclone', 
+  resave: false, 
+  saveUninitialized: true,
+  cookie: { secure: process.env.NODE_ENV === 'production' } // Secure cookies in production
+}));
 app.use(fileUpload());
 app.set('view engine', 'ejs');
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // Healthcheck endpoint for Railway
-app.get('/health', (req, res) => res.status(200).send('OK'));
+app.get('/health', (req, res) => {
+  try {
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('Healthcheck error:', error);
+    res.status(500).send('Server error');
+  }
+});
 
 // User database
 const USERS_FILE = path.join(__dirname, 'users.json');
 
 function loadUsers() {
-  if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
-  return JSON.parse(fs.readFileSync(USERS_FILE));
+  try {
+    return JSON.parse(fs.readFileSync(USERS_FILE));
+  } catch (error) {
+    console.error('Error loading users:', error);
+    return [];
+  }
 }
 
 function saveUser(user) {
-  const users = loadUsers();
-  users.push(user);
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  try {
+    const users = loadUsers();
+    users.push(user);
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  } catch (error) {
+    console.error('Error saving user:', error);
+  }
 }
 
 // Routes
 app.get('/', (req, res) => res.redirect('/signup'));
 
-app.get('/signup', (req, res) => res.render('signup'));
+app.get('/signup', (req, res) => {
+  try {
+    res.render('signup');
+  } catch (error) {
+    console.error('Signup page error:', error);
+    res.status(500).send('Error loading signup page');
+  }
+});
 
 app.post('/signup', (req, res) => {
   try {
@@ -65,7 +111,14 @@ app.post('/signup', (req, res) => {
   }
 });
 
-app.get('/login', (req, res) => res.render('login'));
+app.get('/login', (req, res) => {
+  try {
+    res.render('login');
+  } catch (error) {
+    console.error('Login page error:', error);
+    res.status(500).send('Error loading login page');
+  }
+});
 
 app.post('/login', (req, res) => {
   try {
@@ -85,25 +138,35 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/chat', (req, res) => {
-  if (!req.session.user) return res.redirect('/login');
-  res.render('chat', { 
-    username: req.session.user.username,
-    user: req.session.user
-  });
+  try {
+    if (!req.session.user) return res.redirect('/login');
+    res.render('chat', { 
+      username: req.session.user.username,
+      user: req.session.user
+    });
+  } catch (error) {
+    console.error('Chat page error:', error);
+    res.status(500).send('Error loading chat page');
+  }
 });
 
 app.get('/chat/:receiver', (req, res) => {
-  if (!req.session.user) return res.redirect('/login');
-  const receiver = req.params.receiver;
-  const users = loadUsers();
-  const found = users.find(u => u.username === receiver);
+  try {
+    if (!req.session.user) return res.redirect('/login');
+    const receiver = req.params.receiver;
+    const users = loadUsers();
+    const found = users.find(u => u.username === receiver);
 
-  res.render('chat_user', { 
-    sender: req.session.user.username,
-    receiver,
-    receiverDp: found?.dp || '/images/dummy.jpg',
-    user: req.session.user
-  });
+    res.render('chat_user', { 
+      sender: req.session.user.username,
+      receiver,
+      receiverDp: found?.dp || '/images/dummy.jpg',
+      user: req.session.user
+    });
+  } catch (error) {
+    console.error('Chat user page error:', error);
+    res.status(500).send('Error loading chat');
+  }
 });
 
 app.get('/searchUser', (req, res) => {
@@ -122,13 +185,18 @@ app.get('/searchUser', (req, res) => {
 });
 
 app.get('/upload-dp', (req, res) => {
-  if (!req.session.user) return res.redirect('/login');
-  res.render('uploadDp', { user: req.session.user });
+  try {
+    if (!req.session.user) return res.redirect('/login');
+    res.render('uploadDp', { user: req.session.user });
+  } catch (error) {
+    console.error('Upload DP page error:', error);
+    res.status(500).send('Error loading upload page');
+  }
 });
 
 app.post('/uploadDp', (req, res) => {
-  if (!req.session.user) return res.redirect('/login');
   try {
+    if (!req.session.user) return res.redirect('/login');
     const file = req.files.dp;
     const username = req.session.user.username;
     const uploadPath = `public/uploads/${username}_${Date.now()}.jpg`;
@@ -142,7 +210,7 @@ app.post('/uploadDp', (req, res) => {
       const userIndex = users.findIndex(u => u.username === username);
       if (userIndex !== -1) {
         users[userIndex].dp = uploadPath.replace('public', '');
-        fs.writeFileSync('users.json', JSON.stringify(users, null, 2));
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
         req.session.user.dp = users[userIndex].dp;
       }
       res.redirect('/chat');
@@ -158,7 +226,11 @@ io.on('connection', socket => {
   console.log('✅ User connected');
 
   socket.on('register', ({ username }) => {
-    socket.join(username);
+    try {
+      socket.join(username);
+    } catch (error) {
+      console.error('Register error:', error);
+    }
   });
 
   socket.on('joinChat', async ({ sender, receiver }) => {
@@ -262,8 +334,13 @@ io.on('connection', socket => {
 });
 
 function getCurrentTime() {
-  const now = new Date();
-  return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  try {
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch (error) {
+    console.error('Get time error:', error);
+    return '';
+  }
 }
 
 const PORT = process.env.PORT || 3000;
