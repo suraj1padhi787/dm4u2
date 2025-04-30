@@ -622,4 +622,223 @@ body, html {
   .top-bar h1 {
     font-size: 20px;
   }
+}/* Basic Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
+  background: #ECE5DD;
+}
+
+/* Top Bar */
+.chat-top-bar {
+  display: flex;
+  align-items: center;
+  background: #075E54;
+  padding: 8px; /* Reduced padding for a smaller top bar */
+  color: white;
+}
+
+.back-btn {
+  color: white;
+  font-size: 20px; /* Reduced font size */
+  text-decoration: none;
+  margin-right: 8px; /* Reduced margin */
+}
+
+.chat-dp {
+  width: 35px; /* Slightly smaller profile picture */
+  height: 35px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 8px; /* Reduced margin */
+}
+
+.chat-username {
+  font-size: 16px; /* Reduced font size for top bar */
+  font-weight: bold;
+  flex: 1;
+}
+
+.chat-icons {
+  display: flex;
+  gap: 8px;
+  font-size: 18px; /* Reduced icon size */
+}
+
+/* Chat Messages Area */
+.chat-messages {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 20px; /* Increased padding for better spacing */
+  height: calc(100vh - 120px); /* Adjusted height to account for smaller top bar and input */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: #ECE5DD;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 10px;
+}
+
+/* Message Bubble */
+.message {
+  max-width: 60%; /* Reduced max-width for better readability on larger screens */
+  padding: 12px 18px; /* Increased padding for larger bubbles */
+  margin: 15px 0; /* Increased margin for better spacing */
+  border-radius: 12px; /* Slightly larger border-radius for a smoother look */
+  position: relative;
+  font-size: 16px; /* Increased font size for better readability */
+  word-wrap: break-word;
+  display: inline-block;
+  animation: fadeIn 0.3s ease;
+}
+
+.message.sent {
+  background: #DCF8C6;
+  color: black;
+  align-self: flex-end;
+  border-radius: 12px 12px 0 12px; /* Adjusted border-radius */
+}
+
+.message.received {
+  background: white;
+  color: black;
+  align-self: flex-start;
+  border-radius: 12px 12px 12px 0;
+}
+
+.message .time {
+  display: block;
+  text-align: right;
+  font-size: 12px; /* Slightly larger time text */
+  margin-top: 6px;
+  color: gray;
+}
+
+/* Message Input Area */
+.message-input {
+  display: flex;
+  align-items: center;
+  padding: 8px; /* Reduced padding for a smaller input bar */
+  background: white;
+  border-top: 1px solid #ccc;
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+}
+
+.message-input input[type="text"] {
+  flex: 1;
+  padding: 8px 12px; /* Reduced padding for a more compact input */
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  outline: none;
+  font-size: 14px; /* Slightly smaller font size */
+}
+
+.emoji-btn {
+  background: none;
+  border: none;
+  font-size: 20px; /* Reduced icon size */
+  margin: 0 8px; /* Reduced margin */
+  cursor: pointer;
+  color: #075E54;
+}
+
+.input-icons {
+  display: flex;
+  align-items: center;
+  margin-left: 8px; /* Reduced margin */
+}
+
+.input-icons label {
+  font-size: 20px; /* Reduced icon size */
+  margin: 0 8px;
+  color: #075E54;
+  cursor: pointer;
+}
+
+.send-btn {
+  background: #075E54;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 35px; /* Smaller send button */
+  height: 35px;
+  font-size: 18px; /* Reduced font size */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.send-btn:disabled {
+  background: #bcbcbc;
+  cursor: not-allowed;
+}
+
+/* Bubble Options */
+.bubble-options {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: rgba(0,0,0,0.8);
+  padding: 5px 8px;
+  border-radius: 6px;
+  display: flex;
+  gap: 5px;
+  z-index: 10;
+}
+
+.bubble-options button {
+  background: #fff;
+  border: none;
+  font-size: 12px;
+  padding: 3px 5px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* FadeIn Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Responsive */
+@media only screen and (max-width: 600px) {
+  .chat-top-bar {
+    padding: 6px;
+  }
+  .chat-username {
+    font-size: 14px;
+  }
+  .message {
+    max-width: 70%;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  .message .time {
+    font-size: 10px;
+  }
+  .emoji-btn, .send-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
 }
