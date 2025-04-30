@@ -1515,3 +1515,23 @@ body {
 .message.sent .reply-preview {
   border-left-color: #25d366;
 }
+.message-input, .bottom-nav {
+  position: absolute;           /* 👈 use absolute instead of fixed */
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: white;
+  z-index: 10;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+}
+.chat-container {
+  position: relative; /* 👈 needed for absolute children */
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+}
+.chat-messages {
+  padding-bottom: 80px; /* 👈 to avoid hiding last message under nav bar */
+}
