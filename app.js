@@ -1,3 +1,5 @@
+require('dotenv').config(); // first line
+
 const express = require('express');
 const session = require('express-session');
 const fileUpload = require('express-fileupload');
@@ -9,20 +11,25 @@ const socketio = require('socket.io');
 const db = require('./db');
 const setupOnlineTracking = require('./online');
 
+
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 setupOnlineTracking(io);
 
-// Middlewares
+// Middleware
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(session({ secret: 'sqlitechat', resave: false, saveUninitialized: true }));
+app.use(session({
+    secret: 'whatsappclone',
+    resave: false,
+    saveUninitialized: true
+}));
 app.use(fileUpload());
 app.set('view engine', 'ejs');
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// User DB (JSON based)
+// User DB
 const USERS_FILE = path.join(__dirname, 'users.json');
 function loadUsers() {
     if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
@@ -66,6 +73,7 @@ app.get('/chat/:receiver', (req, res) => {
     const receiver = req.params.receiver;
     const users = loadUsers();
     const found = users.find(u => u.username === receiver);
+
     res.render('chat_user', {
         sender: req.session.user.username,
         receiver,
@@ -91,124 +99,83 @@ app.post('/uploadDp', (req, res) => {
     const file = req.files.dp;
     const username = req.session.user.username;
     const uploadPath = `public/uploads/${username}_${Date.now()}.jpg`;
+
     file.mv(uploadPath, err => {
-        if (err) {
-            console.error('DP Upload Error:', err);
-            return res.status(500).send('Upload Error');
-        }
+        if (err) return res.status(500).send('Upload failed');
         const users = loadUsers();
-        const userIndex = users.findIndex(u => u.username === username);
-        if (userIndex !== -1) {
-            users[userIndex].dp = uploadPath.replace('public', '');
-            fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-            req.session.user.dp = users[userIndex].dp;
+        const i = users.findIndex(u => u.username === username);
+        if (i !== -1) {
+            users[i].dp = uploadPath.replace('public', '');
+            fs.writeFileSync('users.json', JSON.stringify(users, null, 2));
+            req.session.user.dp = users[i].dp;
         }
         res.redirect('/chat');
     });
 });
-app.post('/uploadSticker', (req, res) => {
-    if (!req.session.user) {
-        console.log('User not logged in');
-        return res.status(401).json({ success: false, error: 'User not logged in' });
-    }
-    if (!req.files || !req.files.sticker) {
-        console.log('No sticker file uploaded');
-        return res.status(400).json({ success: false, error: 'No sticker file uploaded' });
-    }
-    const file = req.files.sticker;
-    const username = req.session.user.username;
-    const allowedTypes = ['image/gif', 'video/mp4', 'video/webm'];
-    if (!allowedTypes.includes(file.mimetype)) {
-        console.log('Invalid file type:', file.mimetype);
-        return res.status(400).json({ success: false, error: 'Only GIFs or short videos (MP4/WebM) allowed' });
-    }
-    if (file.size > 10 * 1024 * 1024) {
-        console.log('File too large:', file.size);
-        return res.status(400).json({ success: false, error: 'File size too large. Max 10MB allowed' });
-    }
-    const uploadPath = `public/uploads/stickers/${username}_${Date.now()}_${file.name}`;
-    console.log('Uploading sticker to:', uploadPath);
-    file.mv(uploadPath, err => {
-        if (err) {
-            console.error('File upload error:', err);
-            return res.status(500).json({ success: false, error: 'Upload Error: ' + err.message });
-        }
-        const stickerUrl = uploadPath.replace('public', '');
-        const stickerId = db.insertSticker(stickerUrl, username);
-        io.emit('newSticker', { id: stickerId, url: stickerUrl, uploader: username });
-        res.json({ success: true, url: stickerUrl });
-    });
-});
-app.get('/getStickers', (req, res) => {
-    try {
-        const stickers = db.fetchAllStickers();
-        res.json(stickers);
-    } catch (err) {
-        console.error('Error fetching stickers:', err);
-        res.status(500).json({ error: 'Error fetching stickers' });
-    }
-});
 
-// SOCKET.IO
+// SOCKET.IO EVENTS
 io.on('connection', socket => {
-    console.log('✅ Socket Connected');
+    console.log('✅ User connected');
 
-    socket.on('register', ({ username }) => {
-        socket.join(username);
-    });
+    socket.on('register', ({ username }) => socket.join(username));
 
-    socket.on('joinChat', ({ sender, receiver }) => {
+    socket.on('joinChat', async ({ sender, receiver }) => {
         socket.join(sender);
         socket.join(receiver);
-        db.markMessagesAsSeen(receiver, sender);
+        await db.markMessagesAsSeen(receiver, sender);
         db.fetchConversation(sender, receiver, (messages) => {
             socket.emit('loadOldMessages', messages);
         });
         io.to(sender).emit('seenUpdate', { sender: receiver, receiver: sender });
     });
 
-    socket.on('chatMessage', ({ sender, receiver, message, replyTo }) => {
-        const messageId = db.insertMessage(sender, receiver, message, 'text', replyTo);
-        io.to(receiver).emit('newMessage', { _id: messageId, sender, receiver, message, type: 'text', time: getCurrentTime(), replyTo });
+    socket.on('chatMessage', async ({ sender, receiver, message, replyTo }) => {
+        const messageId = await db.insertMessage(sender, receiver, message, 'text', replyTo);
+        io.to(receiver).emit('newMessage', {
+            _id: messageId, sender, receiver,
+            message, type: 'text', time: getCurrentTime(), replyTo
+        });
         socket.emit('messageSent', { _id: messageId });
     });
 
-    socket.on('sendImage', ({ sender, receiver, imageData, replyTo }) => {
-        const messageId = db.insertMessage(sender, receiver, imageData, 'image', replyTo);
-        io.to(receiver).emit('newMessage', { _id: messageId, sender, receiver, message: imageData, type: 'image', time: getCurrentTime(), replyTo });
+    socket.on('sendImage', async ({ sender, receiver, imageData, replyTo }) => {
+        const messageId = await db.insertMessage(sender, receiver, imageData, 'image', replyTo);
+        io.to(receiver).emit('newMessage', {
+            _id: messageId, sender, receiver,
+            message: imageData, type: 'image', time: getCurrentTime(), replyTo
+        });
         socket.emit('messageSent', { _id: messageId });
     });
 
-    socket.on('sendSticker', ({ sender, receiver, stickerUrl, replyTo }) => {
-        const messageId = db.insertMessage(sender, receiver, stickerUrl, 'sticker', replyTo);
-        io.to(receiver).emit('newMessage', { _id: messageId, sender, receiver, message: stickerUrl, type: 'sticker', time: getCurrentTime(), replyTo });
-        socket.emit('messageSent', { _id: messageId });
-    });
-
-    socket.on('editMessage', ({ messageId, newContent }) => {
-        db.updateMessageById(messageId, newContent);
+    socket.on('editMessage', async ({ messageId, newContent }) => {
+        await db.updateMessageById(messageId, newContent);
         io.emit('messageEdited', { messageId, newContent });
     });
 
-    socket.on('deleteMessage', ({ messageId }) => {
-        db.deleteMessageById(messageId);
+    socket.on('seen', async ({ sender, receiver }) => {
+        await db.markMessagesAsSeen(receiver, sender);
+        io.to(sender).emit('seenUpdate', { sender, receiver });
+    });
+
+    socket.on('deleteMessage', async ({ messageId }) => {
+        await db.deleteMessageById(messageId);
         io.emit('messageDeleted', { messageId });
     });
 
-    socket.on('seen', ({ sender, receiver }) => {
-        db.markMessagesAsSeen(receiver, sender);
-        io.to(sender).emit('seenUpdate', { seenSender: receiver, seenReceiver: sender });
-    });
-
-    socket.on('disconnect', () => {
-        console.log('❌ Socket Disconnected');
-    });
+    socket.on('disconnect', () => console.log('❌ User disconnected'));
 });
 
 function getCurrentTime() {
-    const now = new Date();
-    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+// ✅ CONNECT DB + START SERVER
+(async () => {
+    try {
+        await db.connect();
+        const PORT = process.env.PORT || 3000;
+        server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    } catch (err) {
+        console.error('❌ Failed to start server:', err);
+    }
+})();
