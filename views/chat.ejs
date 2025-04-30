@@ -4,23 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WhatsApp Clone</title>
-  <link rel="stylesheet" href="/css/style.css?v=1.0">
+  <link rel="stylesheet" href="/css/style.css?v=1.1">
 </head>
 <body>
 
 <!-- Top Bar -->
 <div class="top-bar chat-top-bar">
   <a href="/chat" class="back-btn">&larr;</a>
-  <img src="<%= user.dp || '/images/dummy.jpg' %>" class="chat-dp" alt="DP">
-  <span class="chat-username"><%= username %></span>
+  <img src="<%= user?.dp || '/images/dummy.jpg' %>" class="chat-dp" alt="DP">
+  <span class="chat-username"><%= username || 'User' %></span>
   <button class="menu-btn" onclick="toggleSidebar()">⋮</button>
 </div>
 
 <!-- Sidebar -->
 <div id="sidebar" class="sidebar hidden">
   <div class="sidebar-header">
-    <img src="<%= user.dp || '/images/dummy.jpg' %>" alt="DP" class="sidebar-dp">
-    <h2><%= username %></h2>
+    <img src="<%= user?.dp || '/images/dummy.jpg' %>" class="sidebar-dp">
+    <h2><%= username || 'User' %></h2>
   </div>
   <div class="sidebar-content">
     <button onclick="openDpUpload()">Change DP</button>
@@ -33,15 +33,11 @@
   <input type="text" id="searchInput" placeholder="Search username...">
 </div>
 
-<!-- Chats List -->
+<!-- Tabs -->
 <div id="savedUsersList" class="tab-content"></div>
-
-<!-- Status Tab -->
 <div id="status" class="tab-content" style="display:none;">
   <div class="center-text">No status available</div>
 </div>
-
-<!-- Calls Tab -->
 <div id="calls" class="tab-content" style="display:none;">
   <div class="call-item">
     <img src="/images/dummy.jpg" alt="DP">
@@ -73,8 +69,6 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-
-// ✅ Sidebar Toggle - clean fix
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (sidebar.classList.contains('active')) {
@@ -85,13 +79,10 @@ function toggleSidebar() {
     sidebar.classList.remove('hidden');
   }
 }
-
 function closeSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  sidebar.classList.remove('active');
-  sidebar.classList.add('hidden');
+  document.getElementById('sidebar').classList.remove('active');
+  document.getElementById('sidebar').classList.add('hidden');
 }
-
 function openDpUpload() {
   closeSidebar();
   window.location.href = '/upload-dp';
@@ -115,7 +106,7 @@ function renderSavedUsers() {
     savedDiv.innerHTML += `
       <div class="chat-item">
         <a href="/chat/${user.username}">
-          <img src="${user.dp || '/images/dummy.jpg'}" alt="DP" class="chat-dp">
+          <img src="${user.dp || '/images/dummy.jpg'}" class="chat-dp" alt="DP">
           <div class="chat-info">
             <div class="chat-top">
               <h3>${user.username}</h3>
@@ -148,7 +139,6 @@ document.getElementById('searchInput').addEventListener('keypress', async functi
 
     if (data.length > 0) {
       const user = data[0];
-
       const alreadySaved = savedUsers.some(u => u.username === user.username);
       if (!alreadySaved) {
         savedUsers.push({
@@ -157,7 +147,6 @@ document.getElementById('searchInput').addEventListener('keypress', async functi
         });
         localStorage.setItem(savedKey, JSON.stringify(savedUsers));
       }
-
       window.location.href = `/chat/${user.username}`;
     } else {
       alert("User not found");
@@ -174,7 +163,6 @@ function showTab(tabName) {
   document.querySelector(`.nav-btn[onclick="showTab('${tabName}')"]`).classList.add('active');
 }
 
-// Initial render
 renderSavedUsers();
 </script>
 
