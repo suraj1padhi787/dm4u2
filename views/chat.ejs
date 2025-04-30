@@ -4,7 +4,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
   <title>WhatsApp Clone</title>
-
   <link rel="stylesheet" href="/css/style.css?v=1.0">
 </head>
 <body>
@@ -19,7 +18,7 @@
   <button class="menu-btn" onclick="toggleSidebar()">⋮</button>
 </div>
 
-<!-- Sidebar -->
+<!-- Sidebar (hidden by default) -->
 <div id="sidebar" class="sidebar hidden">
   <div class="sidebar-header">
     <img src="<%= user.dp || '/images/dummy.jpg' %>" alt="DP" class="sidebar-dp">
@@ -77,30 +76,21 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 
-// ✅ Sidebar Show/Hide Fix
 function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  if (sidebar.classList.contains('active')) {
-    sidebar.classList.remove('active');
-    sidebar.classList.add('hidden');
-  } else {
-    sidebar.classList.add('active');
-    sidebar.classList.remove('hidden');
-  }
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('active');
 }
 
 function closeSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  sidebar.classList.remove('active');
-  sidebar.classList.add('hidden');
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.remove('active');
 }
 
 function openDpUpload() {
-  closeSidebar();
-  window.location.href = '/upload-dp';
+    closeSidebar();
+    window.location.href = '/upload-dp';
 }
 
-// ✅ LocalStorage system for chat list
 const socket = io();
 const sender = "<%= username %>";
 const savedKey = `savedUsers_${sender}`;
@@ -144,7 +134,7 @@ function deleteUser(index) {
   renderSavedUsers();
 }
 
-// Search & Save User
+// Search and Save User
 document.getElementById('searchInput').addEventListener('keypress', async function(e) {
   if (e.key === 'Enter') {
     const query = this.value.trim();
@@ -172,7 +162,7 @@ document.getElementById('searchInput').addEventListener('keypress', async functi
   }
 });
 
-// Tabs
+// Tab Switcher
 function showTab(tabName) {
   document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
   document.getElementById(tabName).style.display = 'block';
